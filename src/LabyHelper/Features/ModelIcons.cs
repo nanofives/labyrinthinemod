@@ -50,7 +50,7 @@ internal static class ModelIcons
         GameObject model = null, camGo = null;
         try
         {
-            var item = Catalog.Collection() is { } col && col.TryGetItem(id, out var it) ? it : null;
+            var item = Catalog.ItemById(id);
             var ar = item?.AssetReference;
             if (ar == null || !ar.RuntimeKeyIsValid()) { Fail(id, "no model reference"); yield break; }
 

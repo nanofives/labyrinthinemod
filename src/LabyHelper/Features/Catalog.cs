@@ -15,25 +15,46 @@ internal static class Catalog
 
     /// <summary>The cosmetics collection: the manager's, else the largest ItemsCollectionSO loaded (there can be
     /// several; picking the first one could miss most items).</summary>
+    // Cached: this is called for every icon on every IMGUI event. FindObjectsOfTypeAll scans every loaded object,
+    // so it only runs when there's no cached collection, at most every 2 s.
+    private static ItemsCollectionSO _collection;
+    private static float _nextSearch;
+    private static readonly Dictionary<ushort, CustomizationItem> ById = new();
+
     public static ItemsCollectionSO Collection()
     {
-        var all = Resources.FindObjectsOfTypeAll<ItemsCollectionSO>();
-        var mine = CustomizationManager.Instance?.Collection;
-        if (!_diagDone && all.Length > 0)
+        try
         {
-            _diagDone = true;
-            foreach (var c in all)
-            {
-                int n = c.collection?.Length ?? 0, withIcon = 0;
-                if (c.collection != null) foreach (var it in c.collection) if (it != null && it.Icon != null) withIcon++;
-                Core.Log.Msg($"Catalog: collection '{c.name}' {n} items, {withIcon} with a loaded icon" +
-                             (mine != null && mine.Pointer == c.Pointer ? " (CustomizationManager's)" : "") + ".");
-            }
+            var mine = CustomizationManager.Instance?.Collection;
+            if (mine != null) return Use(mine);
         }
-        return mine ?? all.OrderByDescending(c => c.collection?.Length ?? 0).FirstOrDefault();
+        catch { /* manager not ready */ }
+        if (_collection != null && !_collection.WasCollected) return _collection;
+        if (Time.unscaledTime < _nextSearch) return null;
+        _nextSearch = Time.unscaledTime + 2f;
+        var found = Resources.FindObjectsOfTypeAll<ItemsCollectionSO>().OrderByDescending(c => c.collection?.Length ?? 0).FirstOrDefault();
+        return found != null ? Use(found) : null;
     }
 
-    private static bool _diagDone;
+    private static ItemsCollectionSO Use(ItemsCollectionSO c)
+    {
+        if (_collection != null && !_collection.WasCollected && _collection.Pointer == c.Pointer) return _collection;
+        _collection = c;
+        ById.Clear();
+        if (c.collection != null)
+            foreach (var it in c.collection)
+                if (it != null) ById[it.ItemID] = it;
+        CosmeticAlert.ClearCaches();
+        Core.Log.Msg($"Catalog: using collection '{c.name}' ({ById.Count} items).");
+        return c;
+    }
+
+    /// <summary>Item by ID from the cached table (no interop scan).</summary>
+    public static CustomizationItem ItemById(ushort id)
+    {
+        if (Collection() == null) return null;
+        return ById.TryGetValue(id, out var it) ? it : null;
+    }
 
     /// <summary>
     /// Item picture for any panel: the icon sprite over its rarity frame; else an icon rendered from the 3D model
@@ -48,16 +69,14 @@ internal static class Catalog
         if (Toast.DrawSprite(inner, icon)) return;
         var tex = ModelIcons.Get(id);
         if (tex != null) { GUI.DrawTexture(inner, tex, ScaleMode.ScaleToFit, true); return; }
-        var item = Collection() is { } col && col.TryGetItem(id, out var it) ? it : null;
+        var item = ItemById(id);
         Toast.DrawPlaceholder(inner, item != null ? Placeholder(item.BodyPart) : "?");
     }
 
     public static IEnumerable<ushort> AllIds()
     {
-        var col = Collection();
-        if (col?.collection == null) yield break;
-        foreach (var it in col.collection)
-            if (it != null) yield return it.ItemID;
+        if (Collection() == null) return Enumerable.Empty<ushort>();
+        return ById.Keys.ToList();
     }
 
     public static List<Item> All()

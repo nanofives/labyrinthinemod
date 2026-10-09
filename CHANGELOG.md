@@ -5,6 +5,13 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.1] - 2026-10-09
+
+### Arreglado
+- Caídas de rendimiento al pasar el mouse por el post-it del tablero y con la colección (F2) abierta: la colección
+  de cosméticos se buscaba en toda la memoria en cada ícono y cada repintado. Ahora se cachea (colección, ítems por ID,
+  nombres e íconos).
+
 ## [0.3.0] - 2026-10-09
 
 ### Información (no cambia la jugabilidad)

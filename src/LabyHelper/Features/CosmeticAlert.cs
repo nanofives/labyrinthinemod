@@ -120,6 +120,7 @@ internal static class CosmeticAlert
     {
         // Icon and frame are fetched separately: GetFrameSprite throws for some rarities (frame array shorter than the
         // rarity enum), and a shared try/catch used to throw the valid icon away with it.
+        if (VisualsCache.TryGetValue(itemID, out var hit)) return hit;
         Sprite icon = null, frame = null;
         CustomizationItem item = null;
         try { item = TryGetItem(itemID); icon = item?.Icon; }
@@ -128,6 +129,7 @@ internal static class CosmeticAlert
         {
             try { frame = Catalog.Collection()?.GetFrameSprite(item.ItemRarity); }
             catch { /* no frame for this rarity */ }
+            VisualsCache[itemID] = (icon, frame);
         }
         return (icon, frame);
     }
@@ -202,7 +204,24 @@ internal static class CosmeticAlert
         }
     }
 
+    private static readonly Dictionary<ushort, string> Names = new();
+    private static readonly Dictionary<ushort, (Sprite, Sprite)> VisualsCache = new();
+
+    public static void ClearCaches()
+    {
+        Names.Clear();
+        VisualsCache.Clear();
+    }
+
     public static string Name(ushort itemID)
+    {
+        if (Names.TryGetValue(itemID, out var cached)) return cached;
+        var n = ResolveName(itemID);
+        if (!n.StartsWith("item #")) Names[itemID] = n; // don't cache before the collection/localisation is ready
+        return n;
+    }
+
+    private static string ResolveName(ushort itemID)
     {
         var item = TryGetItem(itemID);
         if (item == null) return $"item #{itemID}";
@@ -224,13 +243,8 @@ internal static class CosmeticAlert
 
     private static CustomizationItem TryGetItem(ushort itemID)
     {
-        try
-        {
-            var collection = Catalog.Collection();
-            if (collection != null && collection.TryGetItem(itemID, out var item)) return item;
-        }
-        catch (Exception e) { Core.Log.Warning($"CosmeticAlert: item lookup failed: {e.Message}"); }
-        return null;
+        try { return Catalog.ItemById(itemID); }
+        catch (Exception e) { Core.Log.Warning($"CosmeticAlert: item lookup failed: {e.Message}"); return null; }
     }
 
     public static bool? IsUnlocked(ushort itemID)

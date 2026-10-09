@@ -203,8 +203,8 @@ internal static class CaseBoard
 
     private static string Rarity(ushort id)
     {
-        var it = Catalog.All().FirstOrDefault(i => i.Id == id);
-        return it != null ? Catalog.RarityLabel(it.Rarity) : "?";
+        var it = Catalog.ItemById(id);
+        return it != null ? Catalog.RarityLabel(it.ItemRarity) : "?";
     }
 
     private static string ChanceText(string type)
