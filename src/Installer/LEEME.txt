@@ -1,0 +1,52 @@
+LabyHelper para Labyrinthine
+============================
+
+Mod sobre MelonLoader 0.7.3. Todo viene prendido; se cambia en Opciones LabyHelper (F1), incluido el idioma.
+
+Teclas
+  F1            Opciones LabyHelper (también botón en la pantalla de opciones del juego)
+  F2            colección: los que tenés y los que faltan, tradicionales y HARDCORE (también botón en el menú de cosméticos)
+  F3            pool de cosméticos del caso
+  F5            levantarse solo cuando un monstruo te tira (estando caído, te levanta)
+  F6            brillo extra on/off;  F7 / F8 exposición - / +;  Shift+F7/F8 gamma - / +
+  F9            cosmético del caso: imagen, distancia, dirección y marcador a través de paredes; tickets, fichas y XP
+  F1, F2, F3 y F5 no se abren durante un caso.
+
+Además
+  - Aviso al empezar el caso con el cosmético que apareció (nombre, rareza, si es nuevo).
+  - Cartel rojo con el nombre del monstruo que te persigue. El Pigman suena 2,5 veces más bajo.
+  - Tablero de casos: post-it con la imagen del cosmético de cada carpeta; con el mouse encima, todos los datos y
+    qué jugadores lo tienen.
+  - Casos random (las 4 carpetas): siempre sale un cosmético nuevo para alguien del grupo, repartidos entre las
+    carpetas. Más variedad de piezas en el mapa.
+
+Grupo
+  Todos necesitan el mod. Si alguien no lo tiene, las reglas que cambian lo que se genera no se aplican para nadie.
+
+Desinstalar
+  Ejecutá LabyHelper-Setup.exe y elegí [D]esinstalar, o borrá version.dll, MelonLoader\ y Mods\LabyHelper.dll.
+
+Primera vez
+  Al abrir el juego, MelonLoader tarda 1-2 minutos en preparar sus archivos y baja .NET 6 si falta.
+
+------------------------------------------------------------------------------------------------------------
+LabyHelper for Labyrinthine (English)
+
+Mod on MelonLoader 0.7.3. Everything is on by default; change it in LabyHelper options (F1), including language.
+
+Keys
+  F1   LabyHelper options (also a button on the game's settings screen)
+  F2   collection: owned / missing, traditional vs HARDCORE (also a button in the cosmetics menu)
+  F3   cosmetic pool of the current case
+  F5   get up on your own after a monster downs you (while downed, gets you up)
+  F6   extra brightness on/off;  F7/F8 exposure -/+;  Shift+F7/F8 gamma -/+
+  F9   case cosmetic: picture, distance, direction and a through-walls marker; tickets, reroll coins and XP
+  F1, F2, F3 and F5 don't open during a case.
+
+Also: case-start cosmetic alert, a red banner naming the monster chasing you, a 2.5x quieter Pigman, a picture
+post-it on each case folder with full details on hover, and for the 4 random case files a cosmetic always drops and
+it's always one someone in the party is missing, spread across the folders. More map variety in random cases.
+
+Party: everyone needs the mod; if anyone doesn't have it, the generation rules are off for everyone.
+Uninstall: run LabyHelper-Setup.exe and choose [D], or delete version.dll, MelonLoader\ and Mods\LabyHelper.dll.
+First launch: MelonLoader needs 1-2 minutes to set itself up and downloads .NET 6 if missing.

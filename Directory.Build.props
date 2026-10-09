@@ -1,0 +1,7 @@
+<Project>
+  <!-- Single source of truth for the release version. tools/release.ps1 bumps it. -->
+  <PropertyGroup>
+    <LabyHelperVersion>0.3.0</LabyHelperVersion>
+    <Version>$(LabyHelperVersion)</Version>
+  </PropertyGroup>
+</Project>

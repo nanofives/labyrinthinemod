@@ -1,0 +1,71 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>LabyHelper</AssemblyName>
+    <RootNamespace>LabyHelper</RootNamespace>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <GameDir Condition="'$(GameDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Labyrinthine</GameDir>
+    <MLDir>$(GameDir)\MelonLoader</MLDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="$(MLDir)\net6\MelonLoader.dll" Private="false" />
+    <Reference Include="$(MLDir)\net6\0Harmony.dll" Private="false" />
+    <Reference Include="$(MLDir)\net6\Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="$(MLDir)\net6\Il2CppInterop.Common.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Il2Cppmscorlib.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.RenderPipelines.Core.Runtime.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.RenderPipelines.HighDefinition.Runtime.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Il2CppMirror.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Il2Cppcom.rlabrecque.steamworks.net.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Il2CppFizzySteamworks.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.TextMeshPro.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.UI.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.Addressables.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.ResourceManager.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Assembly-CSharp.dll" Private="false" />
+  </ItemGroup>
+
+  <!-- Experiments (no-go features kept for reference) are only built with -p:IncludeExperiments=true. -->
+  <PropertyGroup Condition="'$(IncludeExperiments)' == 'true'">
+    <DefineConstants>$(DefineConstants);EXPERIMENTS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IncludeExperiments)' != 'true'">
+    <Compile Remove="Features/ForeignPieces.cs" />
+  </ItemGroup>
+
+  <!-- Map pools extracted offline from the game files (re/scripts/extract_pools.py). -->
+  <ItemGroup>
+    <EmbeddedResource Include="pools.default.json" LogicalName="pools.default.json" Condition="Exists('pools.default.json')" />
+  </ItemGroup>
+
+  <!-- MelonInfo needs a compile-time constant: generate BuildInfo from the shared version. -->
+  <Target Name="GenerateBuildInfo" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <BuildInfoFile>$(IntermediateOutputPath)BuildInfo.g.cs</BuildInfoFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(BuildInfoFile)" Overwrite="true" WriteOnlyWhenDifferent="true"
+                      Lines="namespace LabyHelper%3B internal static class BuildInfo { public const string Version = &quot;$(LabyHelperVersion)&quot;%3B }" />
+    <ItemGroup>
+      <Compile Include="$(BuildInfoFile)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Deploy straight into the game's Mods folder after each build. The game locks the DLL while running,
+       so a failed copy is only a warning: close the game and build again. -->
+  <Target Name="DeployToGame" AfterTargets="Build" Condition="Exists('$(GameDir)\Mods')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GameDir)\Mods" Retries="0" ContinueOnError="WarnAndContinue" />
+  </Target>
+
+</Project>
