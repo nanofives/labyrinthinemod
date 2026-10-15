@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.9] - 2026-10-15
+
 ### Nuevo
 - F1 > Actualizaciones: interruptor para la actualización automática y una línea con la versión instalada y la última
   de GitHub ("se instala al reiniciar el juego" si hay una nueva, o aviso si falta el actualizador).
