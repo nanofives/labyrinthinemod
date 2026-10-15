@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.4] - 2026-10-14
+
 ### Arreglado
 - Ponerse la gorra de Navidad negra (#434) trababa el personaje: el juego la tiene en el pool de Navidad pero su
   modelo no está en los archivos, así que no puede cargarla. El mod ya no la reparte en los casos y no deja equiparla
@@ -23,7 +25,6 @@ sección a la versión nueva.
 ### Jugabilidad
 - Glowsticks automáticos: tira uno cada 15 s mientras avanzás (no si estás quieto o caído), igual que con la tecla,
   así que todos lo ven. Solo si tenés el glowstick en la mano izquierda. Se configura en F1 > Partida.
-
 
 ## [0.3.3] - 2026-10-14
 
