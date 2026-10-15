@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.5] - 2026-10-14
+
 ### Cambiado
 - Minimapa: tu flecha ahora es grande y amarilla con borde negro, se ve clara hacia dónde mirás.
 - F9 arranca prendido en cada caso (se puede cambiar en F1 > Avisos).
