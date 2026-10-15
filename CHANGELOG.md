@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.10] - 2026-10-15
+
 ### Jugabilidad
 - Tablero de casos (host): todas las carpetas random salen con sello. Las que iban a salir sin sello pasan a sello azul
   (raro, cosmético garantizado), y las HARDCORE siguen saliendo solo mientras a alguien del grupo le falte un cosmético
