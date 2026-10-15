@@ -7,10 +7,10 @@ Teclas
   F1            Opciones LabyHelper (también botón en la pantalla de opciones del juego)
   F2            colección: los que tenés y los que faltan, tradicionales y HARDCORE (también botón en el menú de cosméticos)
   F3            pool de cosméticos del caso
-  F5            levantarse solo cuando un monstruo te tira (estando caído, te levanta)
+  F5            estando caído, te levanta (la opción "Levantarse solo" se cambia en F1)
   F6            brillo extra on/off;  F7 / F8 exposición - / +;  Shift+F7/F8 gamma - / +
   F9            cosmético del caso: imagen, distancia, dirección y marcador a través de paredes; tickets, fichas y XP
-  F1, F2, F3 y F5 no se abren durante un caso.
+  F1, F2 y F3 no se abren durante un caso.
 
 Además
   - Aviso al empezar el caso con el cosmético que apareció (nombre, rareza, si es nuevo).
@@ -38,10 +38,10 @@ Keys
   F1   LabyHelper options (also a button on the game's settings screen)
   F2   collection: owned / missing, traditional vs HARDCORE (also a button in the cosmetics menu)
   F3   cosmetic pool of the current case
-  F5   get up on your own after a monster downs you (while downed, gets you up)
+  F5   while downed, gets you up (the "Get up on your own" option is in F1)
   F6   extra brightness on/off;  F7/F8 exposure -/+;  Shift+F7/F8 gamma -/+
   F9   case cosmetic: picture, distance, direction and a through-walls marker; tickets, reroll coins and XP
-  F1, F2, F3 and F5 don't open during a case.
+  F1, F2 and F3 don't open during a case.
 
 Also: case-start cosmetic alert, a red banner naming the monster chasing you, a 2.5x quieter Pigman, a picture
 post-it on each case folder with full details on hover, and for the 4 random case files a cosmetic always drops and

@@ -23,12 +23,13 @@ public class Core : MelonMod
         CaseBoard.Apply(HarmonyInstance);
         PoolBoost.Apply(HarmonyInstance);
         SelfRevive.Apply(HarmonyInstance);
+        SprintBoost.Apply(HarmonyInstance);
         RandomCaseRule.Apply(HarmonyInstance);
         MapVariety.Apply(HarmonyInstance);
 #if EXPERIMENTS
         ForeignPieces.Apply(HarmonyInstance);
 #endif
-        Log.Msg("Loaded. F6 brillo on/off, F7/F8 exposicion -/+, Shift+F7/F8 gamma -/+, F9 cosmetico del caso, F5 levantarse solo, F3 pool en vivo, F2 coleccion, F1 opciones.");
+        Log.Msg("Loaded. F6 brillo on/off, F7/F8 exposicion -/+, Shift+F7/F8 gamma -/+, F9 cosmetico del caso, F5 levantarse (caido), F3 pool en vivo, F2 coleccion, F1 opciones.");
     }
 
     public override void OnUpdate()

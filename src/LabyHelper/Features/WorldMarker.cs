@@ -6,7 +6,7 @@ namespace LabyHelper.Features;
 /// <summary>
 /// Floating label over each cosmetic still in the map, drawn on top of everything (visible through walls).
 /// Mode "Hotkey" shows it while F9 is toggled on, "Always" keeps it on, "Off" disables it.
-/// Off-screen targets are pinned to the screen edge with an arrow.
+/// Off-screen targets are pinned to the screen edge with an arrow. While F9 is on, the other players get a marker too.
 /// </summary>
 internal static class WorldMarker
 {
@@ -21,6 +21,7 @@ internal static class WorldMarker
         var cam = Camera.main;
         if (cam == null) return;
         _style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+        if (CosmeticAlert.Pinned) DrawPlayers(cam);
 
         foreach (var (pos, name, id) in CosmeticAlert.PendingTargets())
         {
@@ -50,6 +51,34 @@ internal static class WorldMarker
         }
 
         if (Settings.CollectibleMarkers.Value) DrawCollectibles(cam);
+    }
+
+    private static readonly Color PlayerColor = new(0.45f, 1f, 0.5f), DownColor = new(1f, 0.45f, 0.4f);
+
+    /// <summary>Other players, pinned to the screen edge when off-screen (same style as the cosmetic marker).</summary>
+    private static void DrawPlayers(Camera cam)
+    {
+        foreach (var p in Players.Others())
+        {
+            Vector3 sp = cam.WorldToScreenPoint(p.Pos + Vector3.up * 2.1f);
+            bool behind = sp.z < 0;
+            if (behind) sp = -sp;
+            float x = sp.x, y = Screen.height - sp.y;
+            const float margin = 60f;
+            bool offscreen = behind || x < margin || x > Screen.width - margin || y < margin || y > Screen.height - margin;
+            x = Mathf.Clamp(x, margin, Screen.width - margin);
+            y = Mathf.Clamp(y, margin, Screen.height - margin);
+
+            float meters = Vector3.Distance(cam.transform.position, p.Pos);
+            string name = p.Dead ? $"{p.Name} {Loc.T("(caído)", "(down)")}" : p.Name;
+            string label = offscreen ? $"{Arrow(x, y)} {name}\n{meters:0} m" : $"▼ {name}\n{meters:0} m";
+            var rect = new Rect(x - 150, y - 25, 300, 50);
+            GUI.color = Color.black;
+            GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), label, _style);
+            GUI.color = p.Dead ? DownColor : PlayerColor;
+            GUI.Label(rect, label, _style);
+            GUI.color = Color.white;
+        }
     }
 
     private static GUIStyle _small;

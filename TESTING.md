@@ -14,6 +14,8 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] Caso Rare (sello azul) como host: aviso a los ~1.5 s con imagen, nombre, rareza, pool y NUEVO/ya lo tenés.
 - [ ] Log: `Cosmetic spawned: id N <nombre>` con nombre no vacío.
 - [ ] F9: aviso con distancia y dirección + marcador con ícono sobre el objeto, visible a través de paredes.
+- [ ] F9 en grupo: línea "Jugadores: <nombre> 23 m adelante ..." y marcador verde sobre cada jugador (rojo y "(caído)" si está caído).
+- [ ] Correr: notablemente más rápido que caminar comparado con antes (x1.25); caminar y agachado igual que siempre. F1 > Partida > Velocidad al correr = 1 lo deja como el juego.
 - [ ] F9 es toggle: el aviso y el marcador quedan fijos, la distancia se actualiza al moverte; otro F9 los oculta.
 - [ ] Con F9 activo, agarrar el cosmético muestra "Agarraste" y después vuelve el aviso fijo.
 - [ ] Al agarrarlo: aviso "Agarraste: ...".
@@ -32,12 +34,12 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] El cosmético de temporada que sale queda desbloqueado al terminar el caso.
 
 ## Levantarse solo
-- [ ] Viene prendido: F5 fuera de partida lo apaga ("Levantarse solo: OFF").
+- [ ] Viene prendido; solo se apaga en F1 > Partida. F5 fuera de partida no hace nada.
 - [ ] Caído por un monstruo: aparece el aviso nativo de auto-reanimación; mantener la tecla llena la barra y te levanta.
 - [ ] Estando caído, F5 te levanta al instante.
 - [ ] Si tenías el ítem de auto-reanimación, sigue en el inventario después de levantarte.
 - [ ] Como cliente en partida de otro host: también funciona.
-- [ ] F5 de nuevo (OFF): sin el ítem, el aviso nativo desaparece.
+- [ ] Apagado en F1: sin el ítem, el aviso nativo desaparece y F5 no te levanta.
 
 ## Casos random y reparto (host)
 - [ ] Log al entrar al lobby: `Distribution: Maze_X/Rare=N, ...` con la cantidad asignada a cada carpeta.
@@ -75,6 +77,8 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] El panel cambia al tocar la dificultad, F10 o F11 (en menos de 1 s).
 - [ ] Menú de cosméticos abierto: aparece el botón "Colección (F2)" arriba a la derecha.
 - [ ] Colección: pestañas Faltan/Tengo/Todos y Tradicionales/Hardcore/Ambos; contadores correctos; scroll con rueda.
+- [ ] Colección: mouse sobre un cosmético → imagen grande al costado del panel con nombre, rareza y parte; filas fuera del scroll no la disparan.
+- [ ] Agarrar un cosmético: el aviso dice "Se guarda en tu colección al terminar el caso" (o "Ya está en tu colección"); al completar el caso aparece "Desbloqueado: ...".
 - [ ] Los hardcore aparecen como HARDCORE en rojo.
 
 ## Tablero de casos

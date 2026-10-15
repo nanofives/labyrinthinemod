@@ -15,7 +15,7 @@ namespace LabyHelper.Features;
 ///  - Death.HandleSelfReviveInput, once the hold bar fills, calls RndPlayerInventory.RemoveItem(item) and only
 ///    sends CmdReviveSelf if that succeeded. The server-side CmdReviveSelf does no item check.
 /// We keep the availability on and let RemoveItem "succeed" without consuming anything while that input runs.
-/// F5 while downed sends CmdReviveSelf directly, in case the prompt doesn't show.
+/// F5 while downed sends CmdReviveSelf directly, in case the prompt doesn't show. On/off only from F1 (by request).
 /// Changes gameplay, so it is off by default (Settings.SelfReviveAlways).
 /// </summary>
 internal static class SelfRevive
@@ -57,7 +57,7 @@ internal static class SelfRevive
 
     public static void Update()
     {
-        if (!GameState.InCase && Input.GetKeyDown(KeyCode.F5)) Toggle();
+        if (GameState.InCase && Input.GetKeyDown(KeyCode.F5)) ReviveNow();
 
         if (Time.unscaledTime < _nextCheck) return;
         _nextCheck = Time.unscaledTime + 1f;
@@ -83,21 +83,18 @@ internal static class SelfRevive
         }
     }
 
-    /// <summary>F5: toggle the feature; while downed, also get up right away.</summary>
-    private static void Toggle()
+    /// <summary>F5 in a case while downed: get up right away. The feature itself is only switched in F1.</summary>
+    private static void ReviveNow()
     {
+        if (!Settings.SelfReviveAlways.Value) return;
         var death = LocalDeath();
-        bool downed = death != null && IsDowned(death);
-        if (downed && Settings.SelfReviveAlways.Value)
+        if (death == null || !IsDowned(death)) return;
+        try
         {
             death.CmdReviveSelf();
             Toast.Show(Loc.T("Te levantaste solo.", "You got back up."), 2.5f);
-            return;
         }
-        Settings.SelfReviveAlways.Value = !Settings.SelfReviveAlways.Value;
-        Settings.Save();
-        _nextCheck = 0;
-        Toast.Show(Settings.SelfReviveAlways.Value ? Loc.T("Levantarse solo: ON (mantené la tecla de auto-reanimación, o F5 estando caído)", "Get up on your own: ON (hold the self-revive key, or F5 while downed)") : Loc.T("Levantarse solo: OFF", "Get up on your own: OFF"), 4f);
+        catch (Exception e) { Core.Log.Warning($"SelfRevive: {e.Message}"); }
     }
 
     private static bool IsDowned(Death death)

@@ -8,7 +8,7 @@ namespace LabyHelper.Features;
 /// <summary>
 /// Collection browser: while the game's cosmetics menu (CustomizationUIController) is open, a "Colección" button
 /// shows up in its corner; F2 opens it anywhere. Tabs: missing / owned / all, and traditional vs hardcore,
-/// grouped by body part, with counts per category.
+/// grouped by body part, with counts per category. Hovering a row shows the cosmetic large next to the panel.
 /// </summary>
 internal static class CollectionViewer
 {
@@ -16,6 +16,7 @@ internal static class CollectionViewer
     private enum Kind { Traditional, Hardcore, Both }
 
     private const float RowH = 40f;
+    private const float PreviewSize = 300f;
     private static bool _open;
     private static Show _show = Show.Missing;
     private static Kind _kind = Kind.Both;
@@ -133,6 +134,8 @@ internal static class CollectionViewer
         _scroll = Ui.KeyScroll(_scroll, cy - view.height);
         var s = GUI.BeginScrollView(view, new Vector2(0, _scroll), new Rect(0, 0, w - 20, cy));
         _scroll = s.y;
+        Catalog.Item hovered = null;
+        var mouse = Event.current.mousePosition; // scroll-view coordinates here
         foreach (var (ry, header, item) in layout)
         {
             if (ry + RowH < _scroll || ry > _scroll + view.height) continue; // off-screen
@@ -142,11 +145,32 @@ internal static class CollectionViewer
                     header.StartsWith("HARDCORE") ? Catalog.RarityColor(Il2CppCharacterCustomization.ItemRarity.Hardcore) : new Color(0.6f, 0.8f, 1f));
                 continue;
             }
+            // Only the part of the list inside the scroll view counts (rows above/below are clipped).
+            if (new Rect(0, ry, w - 20, RowH).Contains(mouse) && mouse.y >= _scroll && mouse.y <= _scroll + view.height)
+                hovered = item;
             Catalog.DrawIcon(new Rect(10, ry + 2, RowH - 4, RowH - 4), item.Id);
             Ui.Text(new Rect(RowH + 16, ry, 330, RowH), item.Name, item.Owned ? Ui.Label : Ui.Bold, item.Owned ? Color.white : new Color(1f, 0.9f, 0.5f));
             Ui.Text(new Rect(RowH + 350, ry, 110, RowH), Catalog.RarityLabel(item.Rarity), Ui.Small, Catalog.RarityColor(item.Rarity));
             Ui.Text(new Rect(w - 120, ry, 100, RowH), item.Owned ? Loc.T("lo tenés", "owned") : Loc.T("FALTA", "MISSING"), Ui.Small, item.Owned ? Color.gray : new Color(1f, 0.6f, 0.4f));
         }
         GUI.EndScrollView();
+        if (hovered != null) DrawPreview(area, hovered);
+    }
+
+    /// <summary>Large picture of the hovered cosmetic, beside the panel (right side, or left if it doesn't fit).</summary>
+    private static void DrawPreview(Rect area, Catalog.Item item)
+    {
+        const float pad = 12f, textH = 56f;
+        float pw = PreviewSize + 2 * pad, ph = PreviewSize + 2 * pad + textH;
+        float px = area.xMax + 12 + pw <= Screen.width ? area.xMax + 12 : Mathf.Max(0, area.x - 12 - pw);
+        float py = Mathf.Clamp(Event.current.mousePosition.y - ph / 2, 10, Screen.height - ph - 10);
+        var box = new Rect(px, py, pw, ph);
+        Ui.Panel(box);
+        Catalog.DrawIcon(new Rect(px + pad, py + pad, PreviewSize, PreviewSize), item.Id);
+        float ty = py + pad + PreviewSize + 4;
+        Ui.Text(new Rect(px + pad, ty, PreviewSize, 26), item.Name, Ui.Bold, Color.white);
+        Ui.Text(new Rect(px + pad, ty + 26, PreviewSize, 24),
+            $"{Catalog.RarityLabel(item.Rarity)} · {Catalog.PartName(item.Part)} · {(item.Owned ? Loc.T("lo tenés", "owned") : Loc.T("FALTA", "MISSING"))}",
+            Ui.Small, Catalog.RarityColor(item.Rarity));
     }
 }

@@ -26,6 +26,7 @@ internal static class Settings
     public static MelonPreferences_Entry<bool> CaseBoardPostIt;
     public static MelonPreferences_Entry<float> CaseBoardPostItSize;
     public static MelonPreferences_Entry<bool> SelfReviveAlways;
+    public static MelonPreferences_Entry<float> SprintSpeedMultiplier;
     public static MelonPreferences_Entry<bool> PoolAddAllSeasonal;
     public static MelonPreferences_Entry<bool> RandomCasesOnlyNew;
     public static MelonPreferences_Entry<bool> DistributeAcrossCases;
@@ -72,7 +73,9 @@ internal static class Settings
         MarkerMode = _cat.CreateEntry("MarkerMode", "Hotkey",
             description: "Marcador sobre el cosmetico, visible a traves de paredes: Off, Hotkey (mientras F9 este activo), Always.");
         SelfReviveAlways = _cat.CreateEntry("SelfReviveAlways", true,
-            description: "Levantarse solo despues de que un monstruo te tire, sin el item ni ayuda (usa la auto-reanimacion del juego). F5 alterna; estando caido, F5 te levanta.");
+            description: "Levantarse solo despues de que un monstruo te tire, sin el item ni ayuda (usa la auto-reanimacion del juego). Se cambia solo en Opciones LabyHelper (F1); estando caido, F5 te levanta.");
+        SprintSpeedMultiplier = _cat.CreateEntry("SprintSpeedMultiplier", 1.25f,
+            description: "Velocidad al correr de tu jugador (x, 1 = la del juego). No afecta a los monstruos. Cada jugador necesita el mod para tenerla.");
         CaseBoardPostIt = _cat.CreateEntry("CaseBoardPostIt", true,
             description: "Post-it con la imagen del exclusivo mas probable que no tenes, debajo del texto de cada carpeta.");
         CaseBoardPostItSize = _cat.CreateEntry("CaseBoardPostItSize", 3f,

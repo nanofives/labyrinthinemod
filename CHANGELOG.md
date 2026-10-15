@@ -5,6 +5,20 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Información (no cambia la jugabilidad)
+- Colección (F2): al pasar el mouse por un cosmético se muestra en grande al costado, con nombre, rareza y parte.
+- Al agarrar un cosmético el aviso dice si ya quedó en tu colección o si se guarda al terminar el caso (el juego
+  guarda la mayoría recién cuando completás el caso). Al completarlo, un aviso confirma los desbloqueados. F9 muestra
+  los agarrados que siguen pendientes.
+- F9 muestra dónde están los otros jugadores: en el aviso (nombre, distancia, dirección, si está caído) y con un
+  marcador verde sobre cada uno, visible a través de paredes (rojo si está caído).
+
+### Jugabilidad
+- F5 ya no apaga "Levantarse solo" (se cambia solo en F1). Estando caído dentro de un caso, F5 te levanta: antes
+  F5 se ignoraba durante el caso y eso no funcionaba nunca.
+- Tu jugador corre un 25% más rápido (`SprintSpeedMultiplier`, ajustable en F1 > Partida, 1 = como el juego). Solo
+  afecta a los jugadores con el mod, nunca a los monstruos.
+
 ## [0.3.2] - 2026-10-14
 
 ### Cambiado

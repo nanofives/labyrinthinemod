@@ -94,7 +94,7 @@ internal static class OptionsMenu
         y += 34;
 
         var view = new Rect(x, y, w, area.yMax - y - 10);
-        float contentH = 46 * RowH + 11 * 34;
+        float contentH = 47 * RowH + 11 * 34;
         var s = GUI.BeginScrollView(view, new Vector2(0, _scroll), new Rect(0, 0, w - 20, contentH));
         _scroll = s.y;
         float cy = 0, cw = w - 24;
@@ -137,7 +137,8 @@ internal static class OptionsMenu
         Slider(ref cy, cw, Loc.T("Gamma extra", "Extra gamma"), Settings.GammaBoost, 0f, 1f, "0.00");
 
         Section(ref cy, cw, Loc.T("Partida", "Gameplay"));
-        Toggle(ref cy, cw, Loc.T("Levantarse solo (F5)", "Get up on your own (F5)"), Settings.SelfReviveAlways);
+        Toggle(ref cy, cw, Loc.T("Levantarse solo", "Get up on your own"), Settings.SelfReviveAlways);
+        Slider(ref cy, cw, Loc.T("Velocidad al correr (x, juego: 1)", "Sprint speed (x, game: 1)"), Settings.SprintSpeedMultiplier, 1f, 2f, "0.00");
         Toggle(ref cy, cw, Loc.T("Ignorar detector de trampas del juego", "Ignore the game's cheat detector"), Settings.DisableCheatDetector);
 
 #if EXPERIMENTS

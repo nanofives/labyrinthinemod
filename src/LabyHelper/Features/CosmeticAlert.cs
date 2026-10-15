@@ -21,6 +21,9 @@ internal static class CosmeticAlert
     private static readonly List<CustomizationPickup> Live = new();
     private static readonly HashSet<IntPtr> Announced = new();
     private static readonly HashSet<ushort> PickedUp = new();
+    // Picked up with unlockOnContractCompleted: CustomizationSave.UnlockItem parks them in unlockedItemsTemp and only
+    // saves them in OnCotractFinished. Kept across scene loads until the next case starts.
+    private static readonly HashSet<ushort> Pending = new();
     private static float _announceAt = -1f;
     private const float PinnedRefresh = 0.5f;
     private static float _nextPinned;
@@ -37,7 +40,9 @@ internal static class CosmeticAlert
             postfix: new HarmonyMethod(typeof(CosmeticAlert), nameof(StartPostfix)));
         harmony.Patch(AccessTools.Method(typeof(CustomizationPickup), nameof(CustomizationPickup.Pickup)),
             postfix: new HarmonyMethod(typeof(CosmeticAlert), nameof(PickupPostfix)));
-        Core.Log.Msg("CosmeticAlert: hooked CustomizationPickup.Start/Pickup.");
+        harmony.Patch(AccessTools.Method(typeof(CustomizationSave), nameof(CustomizationSave.OnCotractFinished)),
+            postfix: new HarmonyMethod(typeof(CosmeticAlert), nameof(ContractFinishedPostfix)));
+        Core.Log.Msg("CosmeticAlert: hooked CustomizationPickup.Start/Pickup, CustomizationSave.OnCotractFinished.");
     }
 
     public static void OnSceneLoaded()
@@ -45,6 +50,7 @@ internal static class CosmeticAlert
         Live.Clear();
         Announced.Clear();
         PickedUp.Clear();
+        if (GameState.InCase) Pending.Clear();
         _announceAt = -1f;
         Pinned = false;
         _common = _exclusive = _seasonal = null;
@@ -67,8 +73,32 @@ internal static class CosmeticAlert
     private static void PickupPostfix(CustomizationPickup __instance)
     {
         if (__instance == null) return;
-        PickedUp.Add(__instance.ItemID);
-        Toast.Show($"{Loc.T("Agarraste", "Picked up")}: {Describe(__instance.ItemID)}", 5f);
+        ushort id = __instance.ItemID;
+        PickedUp.Add(id);
+        bool pending = false;
+        try { pending = __instance.unlockOnContractCompleted && IsUnlocked(id) != true; }
+        catch { /* field not readable: say nothing about when it saves */ }
+        if (pending) Pending.Add(id);
+        Core.Log.Msg($"CosmeticAlert: picked up {Name(id)} (#{id}), {(pending ? "unlock saved when the case is completed" : "unlocked now")}.");
+        Toast.Show($"{Loc.T("Agarraste", "Picked up")}: {Name(id)}\n" +
+                   (pending ? Loc.T("Se guarda en tu colección al terminar el caso.", "It is added to your collection when the case is completed.")
+                            : Loc.T("Ya está en tu colección.", "It's in your collection.")), 6f);
+    }
+
+    private static void ContractFinishedPostfix()
+    {
+        if (Pending.Count == 0) return;
+        try
+        {
+            var saved = Pending.Where(id => IsUnlocked(id) == true).ToList();
+            var missing = Pending.Except(saved).ToList();
+            Core.Log.Msg($"CosmeticAlert: case completed, saved {string.Join(", ", saved.Select(Name))}" +
+                         (missing.Count > 0 ? $"; not saved: {string.Join(", ", missing.Select(Name))}" : "") + ".");
+            if (saved.Count > 0)
+                Toast.Show(Loc.T($"Desbloqueado: {string.Join(", ", saved.Select(Name))}", $"Unlocked: {string.Join(", ", saved.Select(Name))}"), 6f);
+            Pending.Clear();
+        }
+        catch (Exception e) { Core.Log.Warning($"CosmeticAlert: {e.Message}"); }
     }
 
     public static void Update()
@@ -102,6 +132,8 @@ internal static class CosmeticAlert
         string header = pending.Count switch
         {
             0 when Live.Count == 0 && PickedUp.Count == 0 => Loc.T("No apareció ningún cosmético en este caso.", "No cosmetic spawned in this case."),
+            0 when Pending.Count > 0 => Loc.T($"Agarrado, se guarda al terminar el caso: {string.Join(", ", Pending.Select(Name))}",
+                                             $"Picked up, saved when the case is completed: {string.Join(", ", Pending.Select(Name))}"),
             0 => Loc.T("No quedan cosméticos por agarrar en este caso.", "No cosmetics left to pick up in this case."),
             1 => Loc.T("Cosmético en este caso:", "Cosmetic in this case:"),
             _ => Loc.T($"Cosméticos en este caso ({pending.Count}):", $"Cosmetics in this case ({pending.Count}):"),
@@ -126,6 +158,12 @@ internal static class CosmeticAlert
         }
         if (withLocation && Settings.CollectibleMarkers.Value && Collectibles.Summary() is string col)
             footer = footer == null ? col : footer + "\n" + col;
+        if (withLocation && Players.Others() is { Count: > 0 } others)
+        {
+            string who = Loc.T("Jugadores: ", "Players: ") + string.Join("  ·  ", others.Select(o =>
+                $"{o.Name} {Locate(o.Pos)}{(o.Dead ? Loc.T(" (caído)", " (down)") : "")}"));
+            footer = footer == null ? who : footer + "\n" + who;
+        }
         Toast.ShowItems(header, rows, footer, seconds);
     }
 
