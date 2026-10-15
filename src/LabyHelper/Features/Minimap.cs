@@ -4,10 +4,6 @@ using System.Linq;
 using Il2CppValkoGames.Labyrinthine.Monsters;
 using UnityEngine;
 using AnimState = Il2Cpp.AnimationState;
-using CaseInteractableObject = Il2CppRandomGeneration.Interactable.CaseInteractableObject;
-using InsertPlaceholder = Il2CppRandomGeneration.Interactable.RndInteractableItemInsertPlaceholder;
-using ObjectiveTrigger = Il2CppRandomGeneration.RndUpdateObjectivesOnTrigger;
-using MazeGInteractable = Il2CppValkoGames.Labyrinthine.Cases.Interactions.RndMazeGInteractable;
 using MazeGenerator = Il2Cpp.MazeGenerator;
 using TileType = Il2CppValkoGames.Labyrinthine.Cases.TileType;
 
@@ -20,7 +16,7 @@ namespace LabyHelper.Features;
 /// LandmarkBorder, Start, End); generation runs on every peer, so clients have it too. World/grid conversion comes
 /// from MazeGenerator.GridToWorldPos, sampled at three points so any offset or rotation is handled. Shows you (arrow),
 /// the other players, the monsters (MonsterNetworkSync, synced to every peer; orange, red while chasing), the cosmetic
-/// still on the ground, the exit and the case objectives (see RefreshObjectives). F4 shows/hides it.
+/// still on the ground, the exit and the case objectives (Objectives). F4 shows/hides it.
 /// </summary>
 internal static class Minimap
 {
@@ -33,11 +29,6 @@ internal static class Minimap
     private static GUIStyle _style;
     private static readonly List<(Vector3 pos, bool chasing)> Monsters = new();
     private static float _nextMonsters;
-    private enum Clue { Item, Slot, Zone }
-    private static readonly List<(Vector3 pos, Clue kind)> Clues = new();
-    private static float _nextClues;
-    private static string _clueSummary;
-    private static readonly Color ClueColor = new(0.95f, 0.35f, 1f);
     private static Texture2D _arrow;
 
     /// <summary>64x64 arrowhead pointing up: yellow fill, black outline, notched tail so the direction is obvious.</summary>
@@ -92,7 +83,6 @@ internal static class Minimap
         }
         if (!Settings.MinimapEnabled.Value || !GameState.InCase) return;
         if (Time.unscaledTime >= _nextMonsters) RefreshMonsters();
-        if (Time.unscaledTime >= _nextClues) RefreshObjectives();
         if (Time.unscaledTime < _nextCheck) return;
         _nextCheck = Time.unscaledTime + 1f;
         try { Build(); }
@@ -177,8 +167,8 @@ internal static class Minimap
         if (_end.x >= 0) Dot(ToScreen(_end), Mathf.Max(6f, scale * 1.5f), new Color(1f, 0.3f, 0.25f), "S");
         foreach (var (pos, _, _) in CosmeticAlert.PendingTargets())
             Dot(ToScreen(ToGrid(pos)), 8f, new Color(0.35f, 0.69f, 1f), "◆");
-        foreach (var (pos, kind) in Clues)
-            Dot(ToScreen(ToGrid(pos)), 10f, ClueColor, kind switch { Clue.Slot => "O", Clue.Zone => "◎", _ => "◆" });
+        foreach (var c in Objectives.Pending)
+            Dot(ToScreen(ToGrid(c.Pos)), 10f, Objectives.Colour, Objectives.Glyph(c.Kind));
         foreach (var (pos, chasing) in Monsters)
             Dot(ToScreen(ToGrid(pos)), chasing ? 11f : 9f, chasing ? new Color(1f, 0.15f, 0.1f) : new Color(1f, 0.6f, 0.15f), "X");
         foreach (var p in Players.Others())
@@ -230,47 +220,6 @@ internal static class Minimap
         {
             Core.Log.Warning($"Minimap: monsters: {e.Message}");
             _nextMonsters = Time.unscaledTime + 10f;
-        }
-    }
-
-    /// <summary>
-    /// What the case asks you to do, once a second (only what's still pending):
-    ///  - CaseInteractableObject (seals, effigies, levers, gasoline, map-specific items): pick up / use / destroy while
-    ///    not IsPickedUp, not IsInserted, not IsDisabled. Magenta diamond.
-    ///  - RndInteractableItemInsertPlaceholder: where a picked-up item goes, until IsInserted. Magenta O.
-    ///  - RndUpdateObjectivesOnTrigger: "reach this place" objectives, while their trigger collider is on. Magenta ◎.
-    ///  - RndMazeGInteractable (Maze_G objective objects). Magenta diamond.
-    /// </summary>
-    private static void RefreshObjectives()
-    {
-        _nextClues = Time.unscaledTime + 1f;
-        Clues.Clear();
-        try
-        {
-            foreach (var o in UnityEngine.Object.FindObjectsOfType<CaseInteractableObject>())
-            {
-                if (o == null || !o.isActiveAndEnabled || o.IsDisabled || o.IsInserted) continue;
-                bool slot = o.TryCast<InsertPlaceholder>() != null;
-                if (!slot && o.IsPickedUp) continue;
-                Clues.Add((o.transform.position, slot ? Clue.Slot : Clue.Item));
-            }
-            foreach (var t in UnityEngine.Object.FindObjectsOfType<ObjectiveTrigger>())
-            {
-                if (t == null || !t.isActiveAndEnabled) continue;
-                var col = t.GetComponent<Collider>();
-                if (col != null && !col.enabled) continue;
-                Clues.Add((t.transform.position, Clue.Zone));
-            }
-            foreach (var g in UnityEngine.Object.FindObjectsOfType<MazeGInteractable>())
-                if (g != null && g.isActiveAndEnabled) Clues.Add((g.transform.position, Clue.Item));
-            string summary = $"{Clues.Count(c => c.kind == Clue.Item)} item(s), {Clues.Count(c => c.kind == Clue.Slot)} slot(s), {Clues.Count(c => c.kind == Clue.Zone)} zone(s)";
-            if (summary != _clueSummary) Core.Log.Msg($"Minimap: objectives pending: {summary}.");
-            _clueSummary = summary;
-        }
-        catch (Exception e)
-        {
-            Core.Log.Warning($"Minimap: objectives: {e.Message}");
-            _nextClues = Time.unscaledTime + 10f;
         }
     }
 }

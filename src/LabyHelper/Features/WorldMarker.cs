@@ -21,7 +21,11 @@ internal static class WorldMarker
         var cam = Camera.main;
         if (cam == null) return;
         _style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-        if (CosmeticAlert.Pinned) DrawPlayers(cam);
+        if (CosmeticAlert.Pinned)
+        {
+            DrawPlayers(cam);
+            DrawObjectives(cam);
+        }
 
         foreach (var (pos, name, id) in CosmeticAlert.PendingTargets())
         {
@@ -77,6 +81,25 @@ internal static class WorldMarker
             GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), label, _style);
             GUI.color = p.Dead ? DownColor : PlayerColor;
             GUI.Label(rect, label, _style);
+            GUI.color = Color.white;
+        }
+    }
+
+    /// <summary>Pending case objectives (magenta), no edge arrows: the minimap already shows the off-screen ones.</summary>
+    private static void DrawObjectives(Camera cam)
+    {
+        _small ??= new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+        var camPos = cam.transform.position;
+        foreach (var c in Objectives.Pending)
+        {
+            Vector3 sp = cam.WorldToScreenPoint(c.Pos + Vector3.up * 0.8f);
+            if (sp.z < 0 || sp.x < 0 || sp.x > Screen.width || sp.y < 0 || sp.y > Screen.height) continue;
+            string label = $"{Objectives.Glyph(c.Kind)} {c.Label}  {Vector3.Distance(camPos, c.Pos):0} m";
+            var rect = new Rect(sp.x - 130, Screen.height - sp.y - 12, 260, 24);
+            GUI.color = Color.black;
+            GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width, rect.height), label, _small);
+            GUI.color = Objectives.Colour;
+            GUI.Label(rect, label, _small);
             GUI.color = Color.white;
         }
     }

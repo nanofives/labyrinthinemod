@@ -94,7 +94,7 @@ internal static class OptionsMenu
         y += 34;
 
         var view = new Rect(x, y, w, area.yMax - y - 10);
-        float contentH = 55 * RowH + 12 * 34;
+        float contentH = 56 * RowH + 12 * 34;
         UpdateInfo.CheckOnce();
         var s = GUI.BeginScrollView(view, new Vector2(0, _scroll), new Rect(0, 0, w - 20, contentH));
         _scroll = s.y;
@@ -111,6 +111,7 @@ internal static class OptionsMenu
         Section(ref cy, cw, Loc.T("Dificultad (host)", "Difficulty (host)"));
         Toggle(ref cy, cw, Loc.T("Casos random: siempre cosmético y solo nuevos", "Random cases: always a cosmetic, only new ones"), Settings.RandomCasesOnlyNew);
         Toggle(ref cy, cw, Loc.T("Repartir los nuevos entre las 4 carpetas", "Spread new items across the 4 case files"), Settings.DistributeAcrossCases);
+        Toggle(ref cy, cw, Loc.T("Carpetas siempre con sello (azul o HARDCORE si falta alguno)", "Case files always sealed (blue, or HARDCORE while one is missing)"), Settings.BoardOnlySealed);
         Toggle(ref cy, cw, Loc.T("Sincronizar con los jugadores (necesitan el mod)", "Sync with other players (they need the mod)"), Settings.PartySync);
 
         Section(ref cy, cw, Loc.T("Variedad de mapa (casos random, todos con el mod)", "Map variety (random cases, everyone modded)"));

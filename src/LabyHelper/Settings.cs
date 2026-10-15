@@ -29,6 +29,7 @@ internal static class Settings
     public static MelonPreferences_Entry<float> SprintSpeedMultiplier;
     public static MelonPreferences_Entry<bool> AutoGlowstick;
     public static MelonPreferences_Entry<bool> AutoUpdate;
+    public static MelonPreferences_Entry<bool> BoardOnlySealed;
     public static MelonPreferences_Entry<bool> CosmeticPanelOnByDefault;
     public static MelonPreferences_Entry<float> AutoGlowstickSeconds;
     public static MelonPreferences_Entry<bool> MinimapEnabled;
@@ -82,6 +83,8 @@ internal static class Settings
             description: "Levantarse solo despues de que un monstruo te tire, sin el item ni ayuda (usa la auto-reanimacion del juego). Se cambia solo en Opciones LabyHelper (F1); estando caido, F5 te levanta.");
         SprintSpeedMultiplier = _cat.CreateEntry("SprintSpeedMultiplier", 1.25f,
             description: "Velocidad al correr de tu jugador (x, 1 = la del juego). No afecta a los monstruos. Cada jugador necesita el mod para tenerla.");
+        BoardOnlySealed = _cat.CreateEntry("BoardOnlySealed", true,
+            description: "Como host: todos los casos random del tablero salen con sello (azul o HARDCORE). HARDCORE solo mientras a alguien del grupo le falte un cosmetico HARDCORE.");
         AutoUpdate = _cat.CreateEntry("AutoUpdate", true,
             description: "Al abrir el juego, baja la ultima version de GitHub antes de cargar el mod (plugin LabyHelper.Updater).");
         CosmeticPanelOnByDefault = _cat.CreateEntry("CosmeticPanelOnByDefault", true,

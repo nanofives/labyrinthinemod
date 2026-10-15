@@ -44,6 +44,14 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] F1 > Actualizaciones: muestra "Instalada: X · es la última" (o "nueva: Y, se instala al reiniciar"); sin el plugin dice que falta el actualizador.
 - [ ] Apagar el interruptor crea `UserData\LabyHelper.noupdate` y al reiniciar no busca actualizaciones; prenderlo lo borra.
 
+## Tablero con sellos
+- [ ] Como host, al rerollear: las 4 carpetas random tienen sello azul o HARDCORE (log "BoardSeals: case ... Normal -> Rare").
+- [ ] Con todos los HARDCORE del grupo obtenidos, no aparecen carpetas HARDCORE.
+
+## Objetivos en F9
+- [ ] F9 en un caso: línea "Objetivos pendientes (N): ◆ efigie 23 m adelante · O dónde colocarlo ..." y marcadores magenta en el mundo; se van al cumplirlos.
+- [ ] F3 ya no hace nada.
+
 ## Grupo
 - [ ] En grupo, F9: línea "<cosmético>: lo agarraron: ... · FALTA AGARRARLO: ..." que se actualiza a los pocos segundos de que otro lo agarra; sin el mod = "sin datos".
 - [ ] Entra alguien con el mod: no aparece "no tiene LabyHelper" ni se apagan las reglas (log: "join in progress, state kept" a lo sumo).
@@ -95,12 +103,10 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 
 ## Grupo (todos con el mod)
 - [ ] Log `Party: published N owned items to the lobby.` y `Party: Vos N owned, Amigo M owned -> K needed.`
-- [ ] F3 muestra "Jugador: X faltan" por cada uno; un jugador sin mod aparece "sin datos".
 - [ ] Sale un cosmético que le falta a otro jugador aunque vos ya lo tengas.
 - [ ] Log `Rules: new=1;dist=1;...` igual en todos; con alguien sin mod: `Rules: off for everyone (X no tiene LabyHelper)`.
 
 ## Pool en vivo y colección
-- [ ] F3 en un caso: panel con monstruos/umbral, chance de cosmético, % nuevo y lista con faltantes primero.
 - [ ] El panel cambia al tocar la dificultad, F10 o F11 (en menos de 1 s).
 - [ ] Menú de cosméticos abierto: aparece el botón "Colección (F2)" arriba a la derecha.
 - [ ] Colección: pestañas Faltan/Tengo/Todos y Tradicionales/Hardcore/Ambos; contadores correctos; scroll con rueda.

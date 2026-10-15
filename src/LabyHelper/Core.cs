@@ -27,12 +27,13 @@ public class Core : MelonMod
         SelfRevive.Apply(HarmonyInstance);
         SprintBoost.Apply(HarmonyInstance);
         BrokenItems.Apply(HarmonyInstance);
+        BoardSeals.Apply(HarmonyInstance);
         RandomCaseRule.Apply(HarmonyInstance);
         MapVariety.Apply(HarmonyInstance);
 #if EXPERIMENTS
         ForeignPieces.Apply(HarmonyInstance);
 #endif
-        Log.Msg("Loaded. F6 brillo on/off, F7/F8 exposicion -/+, Shift+F7/F8 gamma -/+, F9 cosmetico del caso, F5 levantarse (caido), F3 pool en vivo, F2 coleccion, F1 opciones.");
+        Log.Msg("Loaded. F6 brillo on/off, F7/F8 exposicion -/+, Shift+F7/F8 gamma -/+, F9 cosmetico del caso, F5 levantarse (caido), F2 coleccion, F4 minimapa, F1 opciones.");
     }
 
     public override void OnUpdate()
@@ -42,6 +43,7 @@ public class Core : MelonMod
         Pigman.Update();
         MonsterAlert.Update();
         AutoGlowstick.Update();
+        Objectives.Update();
         Minimap.Update();
         SelfRevive.Update();
         Party.Update();
@@ -52,7 +54,6 @@ public class Core : MelonMod
 #endif
         Collectibles.Update();
         ModelIcons.Update();
-        PoolViewer.Update();
         CollectionViewer.Update();
         OptionsMenu.Update();
         if (_learnAt.Count > 0 && Time.unscaledTime >= _learnAt[0])
@@ -75,6 +76,7 @@ public class Core : MelonMod
         Pigman.OnSceneLoaded();
         MonsterAlert.OnSceneLoaded();
         AutoGlowstick.OnSceneLoaded();
+        Objectives.OnSceneLoaded();
         Minimap.OnSceneLoaded();
         Collectibles.OnSceneLoaded();
         _learnAt.Clear();
@@ -85,7 +87,6 @@ public class Core : MelonMod
     {
         WorldMarker.Draw();
         Minimap.Draw();
-        PoolViewer.Draw();
         CollectionViewer.Draw();
         OptionsMenu.Draw();
         CaseBoard.DrawTooltip();

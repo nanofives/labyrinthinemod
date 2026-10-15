@@ -91,6 +91,8 @@ internal static class CosmeticAlert
                             : Loc.T("Ya está en tu colección.", "It's in your collection.")), 6f);
     }
 
+    private const string NL = "\n";
+
     private static int CaseSeed()
     {
         try { return Il2Cpp.GameValues.instance?.RandomMazeContract?.Seed ?? 0; }
@@ -201,6 +203,16 @@ internal static class CosmeticAlert
         }
         if (withLocation && Settings.CollectibleMarkers.Value && Collectibles.Summary() is string col)
             footer = footer == null ? col : footer + "\n" + col;
+        if (withLocation && Objectives.Pending.Count > 0)
+        {
+            // Nearest first; the full set is on the minimap and the world markers.
+            var cam = Camera.main;
+            var near = cam == null ? Objectives.Pending.Take(6)
+                : Objectives.Pending.OrderBy(c => (c.Pos - cam.transform.position).sqrMagnitude).Take(6);
+            string obj = Loc.T($"Objetivos pendientes ({Objectives.Pending.Count}): ", $"Pending objectives ({Objectives.Pending.Count}): ") +
+                         string.Join("  ·  ", near.Select(c => $"{Objectives.Glyph(c.Kind)} {c.Label} {Locate(c.Pos)}"));
+            footer = footer == null ? obj : footer + NL + obj;
+        }
         if (withLocation && WhoPickedUp() is string picked)
             footer = footer == null ? picked : footer + "\n" + picked;
         if (withLocation && Players.Others() is { Count: > 0 } others)

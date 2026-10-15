@@ -5,6 +5,19 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Jugabilidad
+- Tablero de casos (host): todas las carpetas random salen con sello. Las que iban a salir sin sello pasan a sello azul
+  (raro, cosmético garantizado), y las HARDCORE siguen saliendo solo mientras a alguien del grupo le falte un cosmético
+  HARDCORE; si ya están todos, pasan a azul. Las carpetas que ya estaban en el tablero cambian al recargarlo o rerollear.
+  Se apaga en F1 > Dificultad.
+
+### Información (no cambia la jugabilidad)
+- F9 muestra los objetivos pendientes del caso: en el aviso los más cercanos con distancia y dirección, y en el mundo
+  un marcador magenta sobre cada uno, a través de paredes.
+
+### Quitado
+- F3 (pool de cosméticos del caso).
+
 ## [0.3.9] - 2026-10-15
 
 ### Nuevo
