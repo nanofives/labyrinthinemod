@@ -22,7 +22,7 @@ internal static class Program
     private const string ProcessName = "Labyrinthine";
 
     // Everything the install puts in the game folder, for uninstall. UserData is kept unless asked.
-    private static readonly string[] InstalledFiles = { "version.dll", @"Mods\LabyHelper.dll", "LabyHelper-LEEME.txt" };
+    private static readonly string[] InstalledFiles = { "version.dll", @"Mods\LabyHelper.dll", @"Plugins\LabyHelper.Updater.dll", "LabyHelper-LEEME.txt" };
     private static readonly string[] InstalledDirs = { "MelonLoader" };
 
     [STAThread]

@@ -18,6 +18,10 @@ Todo viene prendido por defecto (decisión de Mariano). Tu `MelonPreferences.cfg
 ## Instalación en el juego
 MelonLoader 0.7.3 descomprimido en la carpeta del juego (`version.dll` + `MelonLoader/`). Para desinstalar: borrar `version.dll`, `MelonLoader/`, `Mods/`, `Plugins/`, `UserLibs/`, `UserData/`.
 
+**Auto-update:** `Plugins/LabyHelper.Updater.dll` revisa el último release de GitHub al abrir el juego y, si es más
+nuevo, reemplaza `Mods/LabyHelper.dll` antes de que se cargue (asset `LabyHelper.dll` del release). Sin conexión o ante
+cualquier error deja la versión instalada. Desactivar: crear `UserData/LabyHelper.noupdate`.
+
 ## Funciones
 | Tecla | Acción |
 |---|---|

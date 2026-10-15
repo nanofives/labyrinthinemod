@@ -10,8 +10,9 @@ agrega calidad de vida. Hallazgos de ingeniería inversa en `re/FINDINGS.md`; le
    `CHANGELOG.md` bajo `## [Sin publicar]`.
 2. **Prueba:** Mariano juega y prueba con `TESTING.md`. `pwsh -File tools\log.ps1` sigue el log en vivo.
 3. **Release:** solo cuando Mariano lo pide. `pwsh -File tools\release.ps1 -Version X.Y.Z [-Commit]` sube la
-   versión (`Directory.Build.props`), cierra la sección del CHANGELOG y genera `dist\LabyHelper-Setup-X.Y.Z.exe`
-   y `dist\LabyHelper-X.Y.Z-manual.zip`.
+   versión (`Directory.Build.props`), cierra la sección del CHANGELOG y genera `dist\LabyHelper-Setup-X.Y.Z.exe`,
+   `dist\LabyHelper-X.Y.Z-manual.zip` y `dist\LabyHelper.dll`. El release de GitHub (tag `vX.Y.Z`) **tiene que llevar
+   `LabyHelper.dll` como asset**: es lo que baja el auto-updater (`src/Updater/`, plugin en `Plugins\`) de los demás.
 
 No hacer release ni commits sin que lo pida.
 
@@ -23,6 +24,9 @@ No hacer release ni commits sin que lo pida.
 - Grupo: `Party.cs` comparte los desbloqueados por Steam lobby member data (`lh_owned`). El juego solo manda al
   host los cosméticos equipados, así que los demás jugadores necesitan el mod.
 - `src/Installer/`: instalador .NET Framework 4.8 con el paquete embebido.
+- `src/Updater/`: plugin de MelonLoader que, antes de cargar los mods, reemplaza `Mods\LabyHelper.dll` por el asset
+  `LabyHelper.dll` del último release de GitHub si es más nuevo (compara la versión del ensamblado con el tag).
+  Se desactiva con `UserData\LabyHelper.noupdate` (útil en la PC de desarrollo).
 - `re/`: `FINDINGS.md`, `scripts/disasm.py <RVA>`, `scripts/xrefs.py <RVA...>`, `scripts/findwrite.py <nombre> <offset>`.
   `re/il2cpp-dump/` no se versiona; se regenera con `tools\setup.ps1 -Dump` (también después de cada update del juego).
 - `tools/`: `setup.ps1` (bootstrap), `dev.ps1`, `log.ps1`, `package.ps1`, `release.ps1`.

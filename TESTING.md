@@ -37,6 +37,12 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] Log: "BrokenItems: #434 ... has no model in the game files".
 - [ ] Equipar la gorra de Navidad negra: aviso "no tiene modelo ... no se equipa" y el personaje no se traba.
 
+## Auto-actualización
+- [ ] Log de MelonLoader al abrir: "LabyHelper Updater ... is up to date" (o "Updated LabyHelper X -> Y" y aviso en pantalla).
+- [ ] Con una versión vieja instalada y una nueva publicada: al abrir el juego se reemplaza sola; `UserData\LabyHelper.dll.bak` guarda la anterior.
+- [ ] Sin internet: el juego arranca normal con la versión instalada (espera máx. ~6 s).
+- [ ] Con `UserData\LabyHelper.noupdate`: no busca actualizaciones.
+
 ## Grupo
 - [ ] Entra alguien con el mod: no aparece "no tiene LabyHelper" ni se apagan las reglas (log: "join in progress, state kept" a lo sumo).
 - [ ] Entra alguien sin el mod: a los 30 s aparece el aviso y las reglas se apagan para todos (los clientes muestran el motivo del host).

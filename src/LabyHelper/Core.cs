@@ -15,6 +15,7 @@ public class Core : MelonMod
     {
         Log = LoggerInstance;
         Settings.Init();
+        AnnounceUpdate();
         PoolCache.Load();
         CheatDetector.Apply(HarmonyInstance);
         Brightness.Apply(HarmonyInstance);
@@ -88,5 +89,21 @@ public class Core : MelonMod
         OptionsMenu.Draw();
         CaseBoard.DrawTooltip();
         Toast.Draw();
+    }
+
+    /// <summary>The updater plugin leaves "old new" in UserData\LabyHelper.updated.txt after swapping the DLL.</summary>
+    private static void AnnounceUpdate()
+    {
+        try
+        {
+            string path = System.IO.Path.Combine(MelonLoader.Utils.MelonEnvironment.UserDataDirectory, "LabyHelper.updated.txt");
+            if (!System.IO.File.Exists(path)) return;
+            string from = System.IO.File.ReadAllText(path).Split(' ')[0];
+            System.IO.File.Delete(path);
+            Toast.Show(Loc.T($"LabyHelper se actualizó solo: {from} -> {BuildInfo.Version}",
+                             $"LabyHelper updated itself: {from} -> {BuildInfo.Version}"), 15f);
+            Log.Msg($"Updated from {from} to {BuildInfo.Version}.");
+        }
+        catch (System.Exception e) { Log.Warning($"Update notice: {e.Message}"); }
     }
 }

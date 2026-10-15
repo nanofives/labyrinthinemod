@@ -18,12 +18,17 @@ Write-Host '1/4 Compilando el mod...'
 dotnet build "$root\src\LabyHelper\LabyHelper.csproj" -c Release --nologo -v q | Out-Host
 if ($LASTEXITCODE) { throw 'Falló el build del mod.' }
 $modDll = "$root\src\LabyHelper\bin\Release\net6.0\LabyHelper.dll"
+dotnet build "$root\src\Updater\LabyHelper.Updater.csproj" -c Release --nologo -v q | Out-Host
+if ($LASTEXITCODE) { throw 'Falló el build del updater.' }
+$updaterDll = "$root\src\Updater\bin\Release\net6.0\LabyHelper.Updater.dll"
 
-Write-Host '2/4 Armando el paquete (MelonLoader + mod)...'
+Write-Host '2/4 Armando el paquete (MelonLoader + mod + updater)...'
 if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
-New-Item -ItemType Directory -Force $staging, "$staging\Mods" | Out-Null
+New-Item -ItemType Directory -Force $staging, "$staging\Mods", "$staging\Plugins" | Out-Null
 Expand-Archive $MelonZip -DestinationPath $staging
 Copy-Item $modDll "$staging\Mods\"
+Copy-Item $updaterDll "$staging\Plugins\"
+Copy-Item $modDll "$dist\LabyHelper.dll" -Force # release asset the updater plugin downloads
 Copy-Item "$root\src\Installer\LEEME.txt" "$staging\LabyHelper-LEEME.txt"
 
 $payload = Join-Path $dist 'payload.zip'
