@@ -5,6 +5,14 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Nuevo
+- F1 > Actualizaciones: interruptor para la actualización automática y una línea con la versión instalada y la última
+  de GitHub ("se instala al reiniciar el juego" si hay una nueva, o aviso si falta el actualizador).
+
+### Información (no cambia la jugabilidad)
+- F9 dice quién del grupo agarró el cosmético del caso y a quién le FALTA AGARRARLO (cada jugador tiene su propia copia
+  en el mapa). Los jugadores sin el mod aparecen como "sin datos".
+
 ## [0.3.8] - 2026-10-15
 
 ### Información (no cambia la jugabilidad)

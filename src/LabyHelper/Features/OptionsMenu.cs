@@ -94,13 +94,19 @@ internal static class OptionsMenu
         y += 34;
 
         var view = new Rect(x, y, w, area.yMax - y - 10);
-        float contentH = 52 * RowH + 11 * 34;
+        float contentH = 55 * RowH + 12 * 34;
+        UpdateInfo.CheckOnce();
         var s = GUI.BeginScrollView(view, new Vector2(0, _scroll), new Rect(0, 0, w - 20, contentH));
         _scroll = s.y;
         float cy = 0, cw = w - 24;
 
         Section(ref cy, cw, Loc.T("General", "General"));
         Cycle(ref cy, cw, Loc.T("Idioma", "Language"), Settings.Language, Loc.Languages);
+
+        Section(ref cy, cw, Loc.T("Actualizaciones", "Updates"));
+        Toggle(ref cy, cw, Loc.T("Actualizar solo al abrir el juego", "Update automatically when the game starts"), Settings.AutoUpdate);
+        Ui.Text(new Rect(10, cy, cw - 10, RowH), UpdateStatus(), Ui.Small, UpdateInfo.NewerAvailable ? new Color(1f, 0.9f, 0.5f) : Color.gray);
+        cy += RowH;
 
         Section(ref cy, cw, Loc.T("Dificultad (host)", "Difficulty (host)"));
         Toggle(ref cy, cw, Loc.T("Casos random: siempre cosmético y solo nuevos", "Random cases: always a cosmetic, only new ones"), Settings.RandomCasesOnlyNew);
@@ -156,6 +162,20 @@ internal static class OptionsMenu
     }
 
     // ---- controls ----
+
+    private static string UpdateStatus()
+    {
+        string installed = Loc.T($"Instalada: {BuildInfo.Version}", $"Installed: {BuildInfo.Version}");
+        if (!UpdateInfo.PluginInstalled)
+            return installed + Loc.T(" · falta el actualizador: instalá una vez con LabyHelper-Setup.exe",
+                                     " · updater missing: install once with LabyHelper-Setup.exe");
+        if (UpdateInfo.Checking) return installed + Loc.T(" · buscando en GitHub...", " · checking GitHub...");
+        if (UpdateInfo.CheckFailed || UpdateInfo.Latest == null) return installed + Loc.T(" · no se pudo consultar GitHub", " · couldn't reach GitHub");
+        if (!UpdateInfo.NewerAvailable) return installed + Loc.T(" · es la última", " · up to date");
+        return installed + (Settings.AutoUpdate.Value
+            ? Loc.T($" · nueva: {UpdateInfo.Latest}, se instala al reiniciar el juego", $" · new: {UpdateInfo.Latest}, installs on the next game start")
+            : Loc.T($" · nueva: {UpdateInfo.Latest} (actualización automática apagada)", $" · new: {UpdateInfo.Latest} (auto-update off)"));
+    }
 
     private static void Section(ref float y, float w, string title)
     {

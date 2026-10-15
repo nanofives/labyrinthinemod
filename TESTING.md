@@ -41,9 +41,11 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] Log de MelonLoader al abrir: "LabyHelper Updater ... is up to date" (o "Updated LabyHelper X -> Y" y aviso en pantalla).
 - [ ] Con una versión vieja instalada y una nueva publicada: al abrir el juego se reemplaza sola; `UserData\LabyHelper.dll.bak` guarda la anterior.
 - [ ] Sin internet: el juego arranca normal con la versión instalada (espera máx. ~6 s).
-- [ ] Con `UserData\LabyHelper.noupdate`: no busca actualizaciones.
+- [ ] F1 > Actualizaciones: muestra "Instalada: X · es la última" (o "nueva: Y, se instala al reiniciar"); sin el plugin dice que falta el actualizador.
+- [ ] Apagar el interruptor crea `UserData\LabyHelper.noupdate` y al reiniciar no busca actualizaciones; prenderlo lo borra.
 
 ## Grupo
+- [ ] En grupo, F9: línea "<cosmético>: lo agarraron: ... · FALTA AGARRARLO: ..." que se actualiza a los pocos segundos de que otro lo agarra; sin el mod = "sin datos".
 - [ ] Entra alguien con el mod: no aparece "no tiene LabyHelper" ni se apagan las reglas (log: "join in progress, state kept" a lo sumo).
 - [ ] Entra alguien sin el mod: a los 30 s aparece el aviso y las reglas se apagan para todos (los clientes muestran el motivo del host).
 - [ ] Varios casos seguidos en grupo: todos ven el mismo laberinto y el mismo cosmético.

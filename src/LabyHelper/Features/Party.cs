@@ -16,7 +16,14 @@ namespace LabyHelper.Features;
 /// </summary>
 internal static class Party
 {
-    private const string Key = "lh_owned", VersionKey = "lh_ver";
+    private const string Key = "lh_owned", VersionKey = "lh_ver", PickedKey = "lh_picked";
+
+    /// <summary>
+    /// What each other modded player picked up in their current case ("seed:id,id" in lobby member data "lh_picked").
+    /// Cosmetics are spawned and picked up locally on every peer, so this is the only way to know who still has to
+    /// grab theirs.
+    /// </summary>
+    public static readonly Dictionary<ulong, (int seed, HashSet<ushort> ids)> PickedBy = new();
     private const float PublishEvery = 15f, ReadEvery = 3f;
     // A player who just joined hasn't published yet: they count as "still loading" this long before "no mod".
     private const float JoinGrace = 30f;
@@ -194,6 +201,7 @@ internal static class Party
                         ? PoolBoost.OwnedIds().ToHashSet()
                         : Decode(SteamMatchmaking.GetLobbyMemberData(lobby.Value, id, Key));
                     members.Add(new Member(id.m_SteamID, name, isMe, owned));
+                    if (!isMe) ReadPicked(id, SteamMatchmaking.GetLobbyMemberData(lobby.Value, id, PickedKey));
                 }
             }
             catch (Exception e) { Core.Log.Warning($"Party: read failed: {e.Message}"); }
@@ -208,6 +216,31 @@ internal static class Party
             Distribution.Invalidate();
             CaseBoard.RefreshAll();
         }
+    }
+
+    private static void ReadPicked(CSteamID id, string value)
+    {
+        if (string.IsNullOrEmpty(value)) { PickedBy.Remove(id.m_SteamID); return; }
+        var parts = value.Split(':', 2);
+        if (!int.TryParse(parts[0], out int seed)) return;
+        var ids = new HashSet<ushort>();
+        if (parts.Length > 1)
+            foreach (var s in parts[1].Split(',', StringSplitOptions.RemoveEmptyEntries))
+                if (ushort.TryParse(s, out var v)) ids.Add(v);
+        PickedBy[id.m_SteamID] = (seed, ids);
+    }
+
+    /// <summary>Tells the lobby what we picked up in this case (called at case start with nothing, and on pickup).</summary>
+    public static void PublishPicked(int seed, IEnumerable<ushort> ids)
+    {
+        try
+        {
+            var lobby = Lobby();
+            if (lobby == null) return;
+            SteamMatchmaking.SetLobbyMemberData(lobby.Value, PickedKey, $"{seed}:{string.Join(",", ids)}");
+            _nextRead = 0; // refresh the others soon too
+        }
+        catch (Exception e) { Core.Log.Warning($"Party: publish picked failed: {e.Message}"); }
     }
 
     private static bool SameAs(List<Member> other)

@@ -26,7 +26,8 @@ Grupo
 
 Actualizaciones
   Se actualiza solo: al abrir el juego, si hay una versión nueva en GitHub la baja antes de cargar el mod (avisa en
-  pantalla). Sin internet arranca con la que tenés. Para desactivarlo, creá el archivo UserData\LabyHelper.noupdate.
+  pantalla). Sin internet arranca con la que tenés. Se apaga en F1 > Actualizaciones, donde también
+  ves la versión instalada y la última disponible.
 
 Desinstalar
   Ejecutá LabyHelper-Setup.exe y elegí [D]esinstalar, o borrá version.dll, MelonLoader\, Mods\LabyHelper.dll y
@@ -56,7 +57,8 @@ it's always one someone in the party is missing, spread across the folders. More
 
 Party: everyone needs the mod; if anyone doesn't have it, the generation rules are off for everyone.
 Updates: automatic. On game start, a newer GitHub release is downloaded before the mod loads (an on-screen message
-says so). Offline it starts with what you have. To turn it off, create UserData\LabyHelper.noupdate.
+says so). Offline it starts with what you have. Turn it off in F1 > Updates, which also shows
+the installed and latest versions.
 Uninstall: run LabyHelper-Setup.exe and choose [D], or delete version.dll, MelonLoader\, Mods\LabyHelper.dll and
 Plugins\LabyHelper.Updater.dll.
 First launch: MelonLoader needs 1-2 minutes to set itself up and downloads .NET 6 if missing.

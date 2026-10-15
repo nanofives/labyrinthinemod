@@ -50,7 +50,11 @@ internal static class CosmeticAlert
         Live.Clear();
         Announced.Clear();
         PickedUp.Clear();
-        if (GameState.InCase) Pending.Clear();
+        if (GameState.InCase)
+        {
+            Pending.Clear();
+            Party.PublishPicked(CaseSeed(), PickedUp); // new case: nothing picked yet
+        }
         _announceAt = -1f;
         Pinned = GameState.InCase && Settings.CosmeticPanelOnByDefault.Value; // F9 starts on in every case
         _nextPinned = Time.unscaledTime + 3f; // let the case's cosmetic spawn first
@@ -80,10 +84,48 @@ internal static class CosmeticAlert
         try { pending = __instance.unlockOnContractCompleted && IsUnlocked(id) != true; }
         catch { /* field not readable: say nothing about when it saves */ }
         if (pending) Pending.Add(id);
+        Party.PublishPicked(CaseSeed(), PickedUp);
         Core.Log.Msg($"CosmeticAlert: picked up {Name(id)} (#{id}), {(pending ? "unlock saved when the case is completed" : "unlocked now")}.");
         Toast.Show($"{Loc.T("Agarraste", "Picked up")}: {Name(id)}\n" +
                    (pending ? Loc.T("Se guarda en tu colección al terminar el caso.", "It is added to your collection when the case is completed.")
                             : Loc.T("Ya está en tu colección.", "It's in your collection.")), 6f);
+    }
+
+    private static int CaseSeed()
+    {
+        try { return Il2Cpp.GameValues.instance?.RandomMazeContract?.Seed ?? 0; }
+        catch { return 0; }
+    }
+
+    /// <summary>
+    /// "Cosmetic: picked up by you, Batsy · still to pick up: McLovin · unknown (no mod): X", for the cosmetics of this
+    /// case. Each peer has its own copy of the pickup, so this comes from what everyone publishes (Party.PickedBy).
+    /// </summary>
+    private static string WhoPickedUp()
+    {
+        Live.RemoveAll(p => p == null || p.WasCollected);
+        var ids = Live.Select(p => p.ItemID).Concat(PickedUp).ToHashSet();
+        if (ids.Count == 0 || Party.Members.Count(m => !m.IsMe) == 0) return null;
+        int seed = CaseSeed();
+        var lines = new List<string>();
+        foreach (var id in ids)
+        {
+            var have = new List<string>();
+            var missing = new List<string>();
+            var unknown = new List<string>();
+            foreach (var m in Party.Members)
+            {
+                if (m.IsMe) { (PickedUp.Contains(id) ? have : missing).Add(Loc.T("vos", "you")); continue; }
+                if (!Party.PickedBy.TryGetValue(m.SteamId, out var p) || p.seed != seed) unknown.Add(m.Name);
+                else (p.ids.Contains(id) ? have : missing).Add(m.Name);
+            }
+            var parts = new List<string>();
+            if (have.Count > 0) parts.Add(Loc.T("lo agarraron: ", "picked up by: ") + string.Join(", ", have));
+            if (missing.Count > 0) parts.Add(Loc.T("FALTA AGARRARLO: ", "STILL TO PICK UP: ") + string.Join(", ", missing));
+            if (unknown.Count > 0) parts.Add(Loc.T("sin datos (sin el mod): ", "unknown (no mod): ") + string.Join(", ", unknown));
+            lines.Add($"{Name(id)}: {string.Join("  ·  ", parts)}");
+        }
+        return string.Join("\n", lines);
     }
 
     private static void ContractFinishedPostfix()
@@ -159,6 +201,8 @@ internal static class CosmeticAlert
         }
         if (withLocation && Settings.CollectibleMarkers.Value && Collectibles.Summary() is string col)
             footer = footer == null ? col : footer + "\n" + col;
+        if (withLocation && WhoPickedUp() is string picked)
+            footer = footer == null ? picked : footer + "\n" + picked;
         if (withLocation && Players.Others() is { Count: > 0 } others)
         {
             string who = Loc.T("Jugadores: ", "Players: ") + string.Join("  ·  ", others.Select(o =>
