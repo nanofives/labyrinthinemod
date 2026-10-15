@@ -52,7 +52,8 @@ internal static class CosmeticAlert
         PickedUp.Clear();
         if (GameState.InCase) Pending.Clear();
         _announceAt = -1f;
-        Pinned = false;
+        Pinned = GameState.InCase && Settings.CosmeticPanelOnByDefault.Value; // F9 starts on in every case
+        _nextPinned = Time.unscaledTime + 3f; // let the case's cosmetic spawn first
         _common = _exclusive = _seasonal = null;
     }
 

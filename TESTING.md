@@ -45,7 +45,10 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 ## Minimapa y glowsticks
 - [ ] En un caso: minimapa arriba a la derecha, el laberinto coincide con lo que recorrés; tu flecha gira con la cámara.
 - [ ] Otros jugadores (verde), cosmético (azul) y salida (S roja) en el lugar correcto. F4 lo oculta y lo vuelve a mostrar.
-- [ ] Con el glowstick en la mano izquierda, cada 15 s cae uno mientras caminás; quieto no tira. Los demás lo ven.
+- [ ] Al empezar el caso el glowstick queda solo en la mano izquierda.
+- [ ] Cada 2 s cae uno mientras caminás; quieto no tira. Los demás lo ven. Con brújula/radio en la mano no tira.
+- [ ] Flecha del minimapa: grande, amarilla, apunta hacia donde mirás.
+- [ ] F9 ya está prendido al empezar el caso (aviso fijo y marcadores); F9 lo apaga.
 
 ## Levantarse solo
 - [ ] Viene prendido; solo se apaga en F1 > Partida. F5 fuera de partida no hace nada.

@@ -94,7 +94,7 @@ internal static class OptionsMenu
         y += 34;
 
         var view = new Rect(x, y, w, area.yMax - y - 10);
-        float contentH = 51 * RowH + 11 * 34;
+        float contentH = 52 * RowH + 11 * 34;
         var s = GUI.BeginScrollView(view, new Vector2(0, _scroll), new Rect(0, 0, w - 20, contentH));
         _scroll = s.y;
         float cy = 0, cw = w - 24;
@@ -122,6 +122,7 @@ internal static class OptionsMenu
         Toggle(ref cy, cw, Loc.T("Aviso del cosmético del caso", "Case cosmetic alert"), Settings.CosmeticAlertEnabled);
         Slider(ref cy, cw, Loc.T("Segundos del aviso", "Alert seconds"), Settings.CosmeticAlertSeconds, 2f, 30f, "0");
         Cycle(ref cy, cw, Loc.T("Marcador en el mundo (F9)", "World marker (F9)"), Settings.MarkerMode, MarkerModes);
+        Toggle(ref cy, cw, Loc.T("F9 prendido al empezar cada caso", "F9 on when each case starts"), Settings.CosmeticPanelOnByDefault);
         Toggle(ref cy, cw, Loc.T("Marcar tickets, fichas de reroll y XP", "Mark tickets, reroll coins and XP"), Settings.CollectibleMarkers);
         Slider(ref cy, cw, Loc.T("Alcance del sonido del Pigman (x, menos = más silencioso)", "Pigman sound range (x, lower = quieter)"), Settings.PigmanAudioMultiplier, 0.2f, 3f, "0.0");
         Toggle(ref cy, cw, Loc.T("Cartel cuando un monstruo te persigue", "Banner when a monster chases you"), Settings.MonsterChaseAlert);
@@ -140,7 +141,7 @@ internal static class OptionsMenu
         Toggle(ref cy, cw, Loc.T("Levantarse solo", "Get up on your own"), Settings.SelfReviveAlways);
         Slider(ref cy, cw, Loc.T("Velocidad al correr (x, juego: 1)", "Sprint speed (x, game: 1)"), Settings.SprintSpeedMultiplier, 1f, 2f, "0.00");
         Toggle(ref cy, cw, Loc.T("Tirar glowsticks solo", "Drop glowsticks automatically"), Settings.AutoGlowstick);
-        Slider(ref cy, cw, Loc.T("Cada cuántos segundos", "Every N seconds"), Settings.AutoGlowstickSeconds, 2f, 60f, "0");
+        Slider(ref cy, cw, Loc.T("Cada cuántos segundos", "Every N seconds"), Settings.AutoGlowstickSeconds, 1f, 60f, "0");
         Toggle(ref cy, cw, Loc.T("Minimapa (F4)", "Minimap (F4)"), Settings.MinimapEnabled);
         Slider(ref cy, cw, Loc.T("Tamaño del minimapa (px)", "Minimap size (px)"), Settings.MinimapSize, 120f, 600f, "0");
         Toggle(ref cy, cw, Loc.T("Ignorar detector de trampas del juego", "Ignore the game's cheat detector"), Settings.DisableCheatDetector);

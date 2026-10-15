@@ -5,6 +5,12 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Cambiado
+- Minimapa: tu flecha ahora es grande y amarilla con borde negro, se ve clara hacia dónde mirás.
+- F9 arranca prendido en cada caso (se puede cambiar en F1 > Avisos).
+- Glowsticks automáticos: uno cada 2 s por defecto (antes 15 s, se aplica también a configuraciones existentes), y
+  al empezar el caso el glowstick queda en la mano izquierda.
+
 ## [0.3.4] - 2026-10-14
 
 ### Arreglado

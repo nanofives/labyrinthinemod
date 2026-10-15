@@ -28,6 +28,7 @@ internal static class Settings
     public static MelonPreferences_Entry<bool> SelfReviveAlways;
     public static MelonPreferences_Entry<float> SprintSpeedMultiplier;
     public static MelonPreferences_Entry<bool> AutoGlowstick;
+    public static MelonPreferences_Entry<bool> CosmeticPanelOnByDefault;
     public static MelonPreferences_Entry<float> AutoGlowstickSeconds;
     public static MelonPreferences_Entry<bool> MinimapEnabled;
     public static MelonPreferences_Entry<float> MinimapSize;
@@ -80,10 +81,13 @@ internal static class Settings
             description: "Levantarse solo despues de que un monstruo te tire, sin el item ni ayuda (usa la auto-reanimacion del juego). Se cambia solo en Opciones LabyHelper (F1); estando caido, F5 te levanta.");
         SprintSpeedMultiplier = _cat.CreateEntry("SprintSpeedMultiplier", 1.25f,
             description: "Velocidad al correr de tu jugador (x, 1 = la del juego). No afecta a los monstruos. Cada jugador necesita el mod para tenerla.");
+        CosmeticPanelOnByDefault = _cat.CreateEntry("CosmeticPanelOnByDefault", true,
+            description: "F9 (aviso fijo del cosmetico, jugadores y marcadores) arranca prendido en cada caso.");
         AutoGlowstick = _cat.CreateEntry("AutoGlowstick", true,
-            description: "Tira un glowstick solo cada AutoGlowstickSeconds mientras avanzas (si tenes el glowstick en la mano izquierda).");
-        AutoGlowstickSeconds = _cat.CreateEntry("AutoGlowstickSeconds", 15f,
-            description: "Segundos entre glowsticks automaticos (minimo 2).");
+            description: "Al empezar el caso pone el glowstick en la mano izquierda y tira uno solo cada AutoGlowstickInterval segundos mientras avanzas.");
+        // New key (was AutoGlowstickSeconds = 15) so the new 2 s default applies to existing configs.
+        AutoGlowstickSeconds = _cat.CreateEntry("AutoGlowstickInterval", 2f,
+            description: "Segundos entre glowsticks automaticos (minimo 1).");
         MinimapEnabled = _cat.CreateEntry("MinimapEnabled", true,
             description: "Minimapa fijo arriba a la derecha durante los casos. F4 lo muestra/oculta.");
         MinimapSize = _cat.CreateEntry("MinimapSize", 260f,

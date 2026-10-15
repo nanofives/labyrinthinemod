@@ -22,6 +22,43 @@ internal static class Minimap
     private static Vector2 _end = new(-1, -1);
     private static float _nextCheck;
     private static GUIStyle _style;
+    private static Texture2D _arrow;
+
+    /// <summary>64x64 arrowhead pointing up: yellow fill, black outline, notched tail so the direction is obvious.</summary>
+    private static Texture2D MakeArrow()
+    {
+        const int n = 64;
+        var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+        tex.hideFlags = HideFlags.HideAndDontSave;
+        var px = new Color32[n * n];
+        // Arrow polygon in texture coords (y up): tip, right wing, notch, left wing.
+        var poly = new[] { new Vector2(32, 62), new Vector2(56, 4), new Vector2(32, 18), new Vector2(8, 4) };
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                var p = new Vector2(x + 0.5f, y + 0.5f);
+                float d = SignedDistance(p, poly);
+                px[y * n + x] = d < -3f ? new Color32(255, 220, 40, 255) : d < 0.5f ? new Color32(0, 0, 0, 255) : new Color32(0, 0, 0, 0);
+            }
+        tex.SetPixels32(px);
+        tex.Apply(false);
+        return tex;
+    }
+
+    /// <summary>Negative inside the polygon, distance to its edge in pixels.</summary>
+    private static float SignedDistance(Vector2 p, Vector2[] poly)
+    {
+        float best = float.MaxValue;
+        bool inside = false;
+        for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
+        {
+            Vector2 a = poly[j], b = poly[i], ab = b - a;
+            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
+            best = Mathf.Min(best, (a + ab * t - p).magnitude);
+            if ((a.y > p.y) != (b.y > p.y) && p.x < a.x + (p.y - a.y) / (b.y - a.y) * (b.x - a.x)) inside = !inside;
+        }
+        return inside ? -best : best;
+    }
 
     public static void OnSceneLoaded()
     {
@@ -130,9 +167,12 @@ internal static class Minimap
             var me = ToScreen(ToGrid(cam.transform.position));
             var ahead = ToScreen(ToGrid(cam.transform.position + new Vector3(cam.transform.forward.x, 0, cam.transform.forward.z).normalized * 10f));
             float angle = Mathf.Atan2(ahead.x - me.x, -(ahead.y - me.y)) * Mathf.Rad2Deg; // 0 = up on screen
+            // Big arrow (drawn texture, not a font glyph): yellow with a black outline, pointing where you look.
+            _arrow ??= MakeArrow();
+            float a = Mathf.Clamp(size * 0.11f, 22f, 44f);
             var saved = GUI.matrix;
             GUIUtility.RotateAroundPivot(angle, me);
-            Dot(me, 12f, Color.white, "▲");
+            GUI.DrawTexture(new Rect(me.x - a / 2, me.y - a / 2, a, a), _arrow, ScaleMode.StretchToFill, true);
             GUI.matrix = saved;
         }
     }
