@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.7] - 2026-10-14
+
 ### Nuevo
 - Auto-actualización: el instalador agrega un plugin (`Plugins\LabyHelper.Updater.dll`) que al abrir el juego baja
   la última versión de GitHub antes de cargar el mod y avisa en pantalla. Hay que instalar esta versión una vez con el
