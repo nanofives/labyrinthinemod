@@ -5,6 +5,11 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Información (no cambia la jugabilidad)
+- Minimapa: muestra los objetivos del caso que faltan, en magenta: objetos para agarrar o usar (sellos, efigies,
+  palancas, nafta y los propios de cada mapa) con un rombo, dónde hay que colocarlos con una O, y lugares a los que hay
+  que llegar con un ◎. Desaparecen a medida que se cumplen.
+
 ## [0.3.7] - 2026-10-14
 
 ### Nuevo

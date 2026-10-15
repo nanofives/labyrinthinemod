@@ -54,6 +54,7 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] Al empezar el caso el glowstick queda solo en la mano izquierda.
 - [ ] Cada 2 s cae uno mientras caminás; quieto no tira. Los demás lo ven. Con brújula/radio en la mano no tira.
 - [ ] Monstruos en el minimapa: X naranja donde está cada uno; roja cuando persigue.
+- [ ] Objetivos en el minimapa (magenta): rombo = objeto a agarrar/usar, O = dónde colocarlo, ◎ = lugar a alcanzar; se borran al cumplirlos. Log: "Minimap: objectives pending: ...".
 - [ ] Flecha del minimapa: grande, amarilla, apunta hacia donde mirás.
 - [ ] F9 ya está prendido al empezar el caso (aviso fijo y marcadores); F9 lo apaga.
 
