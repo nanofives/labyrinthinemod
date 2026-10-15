@@ -40,6 +40,7 @@ public class Core : MelonMod
         SelfRevive.Update();
         Party.Update();
         Rules.Refresh();
+        CaseBoard.Update();
 #if EXPERIMENTS
         ForeignPieces.Update();
 #endif

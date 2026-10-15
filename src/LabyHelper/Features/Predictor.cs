@@ -68,13 +68,14 @@ internal static class Predictor
             if (asHost && RandomCaseRule.Applies(c))
             {
                 o.Allowed = Features.Distribution.Allowed(c);
-                if (o.Allowed.Count > 0)
+                var frozen = Features.Distribution.Target(c);
+                if (frozen != null || o.Allowed.Count > 0)
                 {
                     // The item is picked by RandomCaseRule with a contract-seeded RNG (independent of maze retries),
                     // so for these cases we know it exactly.
                     o.RuleApplies = true;
                     o.SpawnChance = 1f;
-                    o.Target = RandomCaseRule.PickTarget(c, o.Allowed);
+                    o.Target = frozen ?? RandomCaseRule.PickTarget(c, o.Allowed);
                     o.Items = new Dictionary<ushort, double> { [o.Target.Value] = 1.0 };
                     o.PNew = 1;
                     if (o.MapIds.Contains(o.Target.Value)) o.Exclusives = new() { (o.Target.Value, 1.0) };

@@ -22,6 +22,11 @@ internal static class CosmeticAlert
     private static readonly HashSet<IntPtr> Announced = new();
     private static readonly HashSet<ushort> PickedUp = new();
     private static float _announceAt = -1f;
+    private const float PinnedRefresh = 0.5f;
+    private static float _nextPinned;
+
+    /// <summary>F9 toggles the panel (and the world marker in Hotkey mode) on until pressed again.</summary>
+    public static bool Pinned { get; private set; }
 
     // Pools for the current scene, built lazily from the scene's spawners.
     private static HashSet<ushort> _common, _exclusive, _seasonal;
@@ -41,6 +46,7 @@ internal static class CosmeticAlert
         Announced.Clear();
         PickedUp.Clear();
         _announceAt = -1f;
+        Pinned = false;
         _common = _exclusive = _seasonal = null;
     }
 
@@ -74,8 +80,16 @@ internal static class CosmeticAlert
         }
         if (Input.GetKeyDown(KeyCode.F9))
         {
-            Announce(withLocation: true, seconds: 10f);
-            WorldMarker.OnHotkey();
+            Pinned = !Pinned;
+            if (Pinned) _nextPinned = 0f;
+            else Toast.Hide(Toast.Slot.Info);
+        }
+        // While pinned, redraw every half second so distance and direction follow you. A short message in the same
+        // slot (e.g. "Picked up") is left on screen until it expires.
+        if (Pinned && Time.unscaledTime >= _nextPinned && !Toast.ShowingPlainInfo)
+        {
+            _nextPinned = Time.unscaledTime + PinnedRefresh;
+            Announce(withLocation: true, seconds: PinnedRefresh + 0.5f);
         }
     }
 

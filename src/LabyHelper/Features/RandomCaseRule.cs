@@ -62,7 +62,7 @@ internal static class RandomCaseRule
             var c = Current();
             if (c == null || __instance?.chanceForItem == null) return;
             PoolCache.LearnFromScene(); // capture chanceForItem/seasonal before we touch them
-            if (!Applies(c) || Distribution.Allowed(c).Count == 0) return;
+            if (!Applies(c) || (Distribution.Target(c) == null && Distribution.Allowed(c).Count == 0)) return;
 
             _savedIndex = (int)c.ContractType;
             _savedChance = __instance.chanceForItem[_savedIndex];
@@ -86,7 +86,8 @@ internal static class RandomCaseRule
             var c = Current();
             if (__instance == null || !Applies(c)) return;
             var allowed = Distribution.Allowed(c);
-            if (allowed.Count == 0)
+            var frozen = Distribution.Target(c);
+            if (frozen == null && allowed.Count == 0)
             {
                 Core.Log.Msg("RandomCaseRule: nothing new left for this case; game picks as usual.");
                 return;
@@ -104,7 +105,8 @@ internal static class RandomCaseRule
                              .GroupBy(wp => IdOf(wp).Value).ToDictionary(g => g.Key, g => g.First());
 
             // Same choice on every modded peer: seeded by the contract, over a sorted list.
-            ushort target = PickTarget(c, allowed);
+            // The lobby's frozen pick wins, so the item matches what the board showed.
+            ushort target = frozen ?? PickTarget(c, allowed);
             WeightedPrefab use;
             if (loaded.TryGetValue(target, out var native))
             {
@@ -147,7 +149,7 @@ internal static class RandomCaseRule
             }
             Core.Log.Msg($"RandomCaseRule: {c.MazeType}/{c.ContractType} -> {CosmeticAlert.Name(target)} (#{target}) " +
                          (_swapFrom != null ? $"carried by #{_swapFrom}" : "native to this map") +
-                         $", out of {allowed.Count} assigned; party needed hash {NeededHash()}.");
+                         $", out of {allowed.Count} assigned{(frozen != null ? ", frozen in the lobby" : "")}; party needed hash {NeededHash()}.");
         }
         catch (Exception e)
         {

@@ -39,6 +39,29 @@ internal static class CaseBoard
         Decorate(__instance);
     }
 
+    private static float _nextCheck;
+    private static string _stateKey;
+
+    /// <summary>
+    /// Lobby: re-decorates the board when the rules switch on/off or the party changes (someone joins without the
+    /// mod, owned lists arrive). Before this the post-its kept showing a "guaranteed" item after the rules had turned
+    /// off, and the case dropped something else.
+    /// </summary>
+    public static void Update()
+    {
+        if (!GameState.InLobby || Time.unscaledTime < _nextCheck) return;
+        _nextCheck = Time.unscaledTime + 1f;
+        try
+        {
+            Distribution.Refresh(); // freezes each case's item even with the board info turned off
+            string key = $"{Rules.Active}|{Rules.OnlyNew}|{Rules.Distribute}|{Party.Version}";
+            if (key == _stateKey) return;
+            _stateKey = key;
+            RefreshAll();
+        }
+        catch (Exception e) { Core.Log.Warning($"CaseBoard: {e.Message}"); }
+    }
+
     public static void RefreshAll()
     {
         Live.RemoveAll(u => u == null || u.WasCollected);
@@ -80,16 +103,11 @@ internal static class CaseBoard
         }
     }
 
-    /// <summary>The post-it shows the map-exclusive item most likely to drop that you don't own yet (else the most likely one).</summary>
-    private static ushort? PostItItem(Predictor.Odds o)
-    {
-        if (o.Problem != null) return null;
-        if (o.RuleApplies) return o.Target; // the exact item this case will drop
-        if (o.Exclusives.Count == 0) return null;
-        foreach (var (id, _) in o.Exclusives)
-            if (CosmeticAlert.IsUnlocked(id) != true) return id;
-        return o.Exclusives[0].id;
-    }
+    /// <summary>
+    /// The post-it only shows an item when it is the exact one the case drops (random case under the rule). Showing
+    /// the likeliest exclusive otherwise read as a promise and the case dropped something else.
+    /// </summary>
+    private static ushort? PostItItem(Predictor.Odds o) => o.Problem == null && o.RuleApplies ? o.Target : null;
 
     private static bool _layoutLogged;
 
@@ -161,6 +179,9 @@ internal static class CaseBoard
             string chance = c.ContractType == ContractType.Normal && o.SpawnChance is float sc
                 ? Loc.T($"Chance de cosmético: {sc * 100:0}%", $"Cosmetic chance: {sc * 100:0}%")
                 : Loc.T("Cosmético garantizado", "Guaranteed cosmetic");
+            if (!Rules.Active && Rules.WhyInactive != null)
+                lines.Add((Loc.T($"Reglas apagadas: {Rules.WhyInactive}. Cosmético al azar.", $"Rules off: {Rules.WhyInactive}. Random cosmetic."),
+                           new Color(1f, 0.55f, 0.4f), Ui.Small));
             lines.Add((chance, Color.white, Ui.Label));
             lines.Add((Loc.T($"{o.PNew * 100:0}% de que sea nuevo", $"{o.PNew * 100:0}% chance it's new"), Color.white, Ui.Label));
             if (o.SeasonalChance > 0) lines.Add(($"{o.Event}: {o.SeasonalChance * 100:0}%", Color.white, Ui.Label));

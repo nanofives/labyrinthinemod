@@ -14,6 +14,8 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] Caso Rare (sello azul) como host: aviso a los ~1.5 s con imagen, nombre, rareza, pool y NUEVO/ya lo tenés.
 - [ ] Log: `Cosmetic spawned: id N <nombre>` con nombre no vacío.
 - [ ] F9: aviso con distancia y dirección + marcador con ícono sobre el objeto, visible a través de paredes.
+- [ ] F9 es toggle: el aviso y el marcador quedan fijos, la distancia se actualiza al moverte; otro F9 los oculta.
+- [ ] Con F9 activo, agarrar el cosmético muestra "Agarraste" y después vuelve el aviso fijo.
 - [ ] Al agarrarlo: aviso "Agarraste: ...".
 - [ ] Como cliente (otro host): el aviso también aparece.
 
@@ -21,6 +23,7 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] Mapa con Pigman (Crypts, Cornfield, Mines, Sewer, Snowy Hedges): log `Pigman: boosted range x2.5 ...`.
 - [ ] Pasos y gruñidos audibles desde más lejos que sin el mod.
 - [ ] Cualquier monstruo que te persiga: cartel rojo arriba al centro con su nombre ("PIGMAN te persigue"); varios a la vez se listan juntos.
+- [ ] En grupo: si el monstruo persigue a otro jugador (más cerca de él que de vos), a vos no te aparece el cartel.
 
 ## Temporada y pool (host)
 - [ ] F10 cicla el modo; log `Seasonal: spawning with event X` al empezar el caso.
@@ -79,6 +82,8 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] Idioma: cambiar a English en Opciones LabyHelper traduce avisos, paneles y carpetas.
 - [ ] Mapa aprendido: línea negra con % nuevo, % temporada y exclusivos.
 - [ ] Post-it amarillo con la imagen debajo del texto, legible al hacer zoom en el reroll (ver `PostIt:` en el log).
+- [ ] Entra alguien sin el mod: aviso "Reglas de LabyHelper apagadas" y los post-its desaparecen al instante.
+- [ ] Con reglas activas, el cosmético del post-it es el que aparece en la partida (log: `frozen in the lobby`).
 
 ## Instalador (antes de compartir)
 - [ ] `dist\LabyHelper-Setup-X.Y.Z.exe --detect` encuentra el juego.

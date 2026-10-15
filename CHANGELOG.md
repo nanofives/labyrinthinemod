@@ -5,6 +5,21 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.2] - 2026-10-14
+
+### Cambiado
+- F9 ahora es un toggle: el aviso del cosmético (con distancia y dirección actualizadas) y el marcador quedan en
+  pantalla hasta volver a apretar F9, en lugar de desaparecer a los pocos segundos. Se apaga solo al cambiar de escena.
+
+### Arreglado
+- Tablero de casos: el post-it seguía mostrando un cosmético "garantizado" después de que las reglas se apagaban (por
+  ejemplo cuando entra alguien sin LabyHelper), y en la partida salía otro. Ahora el tablero se actualiza cuando cambian
+  las reglas o el grupo, el post-it solo aparece cuando el cosmético es exacto, y un aviso explica por qué se apagaron.
+- El cosmético de cada caso se fija en el lobby: en la partida se usa el mismo que mostró el tablero aunque los datos
+  del grupo lleguen tarde o cambien.
+- El cartel de persecución ahora es individual: solo le aparece al jugador perseguido (el vivo más cercano al
+  monstruo), no a todo el grupo.
+
 ## [0.3.1] - 2026-10-09
 
 ### Arreglado

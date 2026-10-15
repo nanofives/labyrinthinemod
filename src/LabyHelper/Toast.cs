@@ -37,6 +37,18 @@ internal static class Toast
         e.Until = Time.unscaledTime + seconds;
     }
 
+    public static void Hide(Slot slot) => Entries[slot].Until = 0f;
+
+    /// <summary>The info slot is showing a plain message (not an item list).</summary>
+    public static bool ShowingPlainInfo
+    {
+        get
+        {
+            var e = Entries[Slot.Info];
+            return e.Text != null && e.Rows == null && Time.unscaledTime <= e.Until;
+        }
+    }
+
     public static void ShowItems(string header, List<ItemRow> rows, string footer, float seconds)
     {
         var e = Entries[Slot.Info];

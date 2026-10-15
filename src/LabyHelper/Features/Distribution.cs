@@ -14,10 +14,15 @@ namespace LabyHelper.Features;
 /// (hardcore cases: the hardcore pools). Assignment is deterministic: most constrained items first (map
 /// exclusives have one possible case), each to the eligible case with the fewest items so far, ties broken by a
 /// hash of the case seed. Stored by contract seed so the maze scene can look it up after leaving the lobby.
+///
+/// The exact item of each case (RandomCaseRule.PickTarget) is frozen here too, from the lobby's last party data:
+/// in the maze the party's owned lists can arrive late or differ, and recomputing there gave a different item than
+/// the one the board showed.
 /// </summary>
 internal static class Distribution
 {
     private static readonly Dictionary<int, HashSet<ushort>> BySeed = new();
+    private static readonly Dictionary<int, ushort> Targets = new();
     private static string _inputsKey;
 
     public static void Invalidate() => _inputsKey = null;
@@ -76,22 +81,31 @@ internal static class Distribution
     }
 
     /// <summary>What this random case may drop under the "only new" rule.</summary>
-    public static HashSet<ushort> Allowed(Contract c)
+    public static HashSet<ushort> Allowed(Contract c) => AllowedFrom(c, Party.Needed(), AssignedTo(c));
+
+    private static HashSet<ushort> AllowedFrom(Contract c, HashSet<ushort> needed, HashSet<ushort> assigned)
     {
-        var needed = Party.Needed();
         var cand = Obtainable(c.ContractType == ContractType.Hardcore);
         cand.IntersectWith(needed);
         if (!Rules.Distribute) return cand;
-        var assigned = AssignedTo(c);
         return assigned != null ? assigned.Where(cand.Contains).ToHashSet() : cand;
     }
 
-    private static void Refresh()
+    /// <summary>The item this case drops under the rule, as decided in the lobby (null if none or unknown).</summary>
+    public static ushort? Target(Contract c)
+    {
+        Refresh();
+        return Targets.TryGetValue(c.Seed, out var t) ? t : null;
+    }
+
+    /// <summary>Recomputes the assignment if the board, party or rules changed (no-op otherwise).</summary>
+    public static void Refresh()
     {
         var board = BoardContracts();
         if (board.Count == 0) return; // keep the last assignment (we're in a case)
 
-        string key = string.Join(";", board.Select(c => $"{c.Seed}:{c.MazeType}:{c.ContractType}")) + $"|p{Party.Version}|{PoolCache.Current.Maps.Count}";
+        string key = string.Join(";", board.Select(c => $"{c.Seed}:{c.MazeType}:{c.ContractType}")) +
+                     $"|p{Party.Version}|{PoolCache.Current.Maps.Count}|d{Rules.Distribute}";
         if (key == _inputsKey) return;
         _inputsKey = key;
 
@@ -122,6 +136,12 @@ internal static class Distribution
 
         BySeed.Clear();
         foreach (var (seed, set) in load) BySeed[seed] = set;
+        Targets.Clear();
+        foreach (var c in board)
+        {
+            var allowed = AllowedFrom(c, needed, load[c.Seed]);
+            if (allowed.Count > 0) Targets[c.Seed] = RandomCaseRule.PickTarget(c, allowed);
+        }
         int droppable = needed.Count(id => hcItems.Contains(id) || normalItems.Contains(id));
         Core.Log.Msg("Distribution: " + string.Join(", ", board.Select(c => $"{c.MazeType}/{c.ContractType}={load[c.Seed].Count}")) +
                      $" of {droppable} droppable ({needed.Count} needed, the rest only from store/rewards).");

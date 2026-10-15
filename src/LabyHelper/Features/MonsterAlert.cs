@@ -8,15 +8,18 @@ using AnimState = Il2Cpp.AnimationState;
 namespace LabyHelper.Features;
 
 /// <summary>
-/// Red banner naming every monster that is chasing right now ("PIGMAN is chasing"), for all monster types.
+/// Red banner naming every monster that is chasing you right now ("PIGMAN is chasing"), for all monster types.
 /// A monster counts as chasing when MonsterNetworkSync.IsChasingPlayer is set or its synced animation state is
 /// spot / run / charge (the state is what clients reliably receive). The monster's type comes from its
 /// AIController.MonsterType (present on every peer, disabled on clients); the GameObject name is the fallback.
-/// No distance, by request. Client-side only.
+/// Individual: the chase target lives in the host's behaviour tree and isn't synced, so a chase counts as yours
+/// when you are the living player closest to the monster (with a small margin). No distance shown, by request.
+/// Client-side only.
 /// </summary>
 internal static class MonsterAlert
 {
     private const float Every = 0.4f;
+    private const float Margin = 4f; // metres: a teammate this much closer still counts you as chased
     private static float _next;
     private static readonly Dictionary<IntPtr, string> Names = new();
 
@@ -28,6 +31,17 @@ internal static class MonsterAlert
         _next = Time.unscaledTime + Every;
         try
         {
+            Il2Cpp.PlayerNetworkSync me = null;
+            var others = new List<Vector3>();
+            foreach (var p in UnityEngine.Object.FindObjectsOfType<Il2Cpp.PlayerNetworkSync>())
+            {
+                if (p == null) continue;
+                if (p.isLocalPlayer) me = p;
+                else if (!p.isDead) others.Add(p.transform.position);
+            }
+            if (me == null || me.isDead) return;
+            Vector3 mine = me.transform.position;
+
             var chasing = new List<string>();
             foreach (var sync in UnityEngine.Object.FindObjectsOfType<MonsterNetworkSync>())
             {
@@ -35,6 +49,7 @@ internal static class MonsterAlert
                 var state = sync.CurrentAnimationState;
                 bool charging = state == AnimState.MonsterCharge;
                 if (!(sync.IsChasingPlayer || charging || state == AnimState.MonsterRun || state == AnimState.MonsterSpot)) continue;
+                if (!ChasingMe(sync.transform.position, mine, others)) continue;
                 string name = NameOf(sync);
                 chasing.Add(charging ? Loc.T($"{name} (cargando)", $"{name} (charging)") : name);
             }
@@ -51,6 +66,15 @@ internal static class MonsterAlert
             Core.Log.Warning($"MonsterAlert: {e.Message}");
             _next = Time.unscaledTime + 10f;
         }
+    }
+
+    /// <summary>True when no other living player is clearly closer to the monster than we are.</summary>
+    private static bool ChasingMe(Vector3 monster, Vector3 me, List<Vector3> others)
+    {
+        float mine = Vector3.Distance(monster, me);
+        foreach (var o in others)
+            if (Vector3.Distance(monster, o) + Margin < mine) return false;
+        return true;
     }
 
     private static string NameOf(MonsterNetworkSync sync)

@@ -56,7 +56,13 @@ internal static class Rules
 
         if (!Party.Agreed(Key, Mine(), out var value, out var why))
         {
-            if (Active || _last != "inactive:" + why) Core.Log.Msg($"Rules: off for everyone ({why}).");
+            if (Active || _last != "inactive:" + why)
+            {
+                Core.Log.Msg($"Rules: off for everyone ({why}).");
+                if (GameState.InLobby)
+                    Toast.Show(Loc.T($"Reglas de LabyHelper apagadas: {why}. Los cosméticos salen al azar.",
+                                     $"LabyHelper rules off: {why}. Cosmetics are random."), 8f);
+            }
             Active = false;
             WhyInactive = why;
             _last = "inactive:" + why;

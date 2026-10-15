@@ -52,7 +52,7 @@ internal static class Settings
         DisableCheatDetector = _cat.CreateEntry("DisableCheatDetector", true,
             description: "Fuerza CheatingDetector.CheatingDetected = false.");
         CosmeticAlertEnabled = _cat.CreateEntry("CosmeticAlertEnabled", true,
-            description: "Avisa al empezar el caso que cosmetico spawneo. F9 lo repite con distancia y direccion.");
+            description: "Avisa al empezar el caso que cosmetico spawneo. F9 lo muestra/oculta con distancia y direccion.");
         CosmeticAlertSeconds = _cat.CreateEntry("CosmeticAlertSeconds", 10f,
             description: "Segundos que queda el aviso inicial en pantalla.");
         PigmanAudioMultiplier = _cat.CreateEntry("PigmanAudioMultiplier", 0.4f,
@@ -70,7 +70,7 @@ internal static class Settings
         CollectibleMaxMarkers = _cat.CreateEntry("CollectibleMaxMarkers", 15,
             description: "Cuantos coleccionables marcar a la vez (los mas cercanos).");
         MarkerMode = _cat.CreateEntry("MarkerMode", "Hotkey",
-            description: "Marcador sobre el cosmetico, visible a traves de paredes: Off, Hotkey (8 s tras F9), Always.");
+            description: "Marcador sobre el cosmetico, visible a traves de paredes: Off, Hotkey (mientras F9 este activo), Always.");
         SelfReviveAlways = _cat.CreateEntry("SelfReviveAlways", true,
             description: "Levantarse solo despues de que un monstruo te tire, sin el item ni ayuda (usa la auto-reanimacion del juego). F5 alterna; estando caido, F5 te levanta.");
         CaseBoardPostIt = _cat.CreateEntry("CaseBoardPostIt", true,

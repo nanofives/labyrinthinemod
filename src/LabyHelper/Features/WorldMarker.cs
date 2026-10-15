@@ -5,22 +5,18 @@ namespace LabyHelper.Features;
 
 /// <summary>
 /// Floating label over each cosmetic still in the map, drawn on top of everything (visible through walls).
-/// Mode "Hotkey" shows it for a few seconds after F9, "Always" keeps it on, "Off" disables it.
+/// Mode "Hotkey" shows it while F9 is toggled on, "Always" keeps it on, "Off" disables it.
 /// Off-screen targets are pinned to the screen edge with an arrow.
 /// </summary>
 internal static class WorldMarker
 {
-    private const float HotkeySeconds = 8f;
-    private static float _visibleUntil;
     private static GUIStyle _style;
-
-    public static void OnHotkey() => _visibleUntil = Time.unscaledTime + HotkeySeconds;
 
     public static void Draw()
     {
         string mode = Settings.MarkerMode.Value ?? "Hotkey";
         if (mode.Equals("Off", System.StringComparison.OrdinalIgnoreCase)) return;
-        if (!mode.Equals("Always", System.StringComparison.OrdinalIgnoreCase) && Time.unscaledTime > _visibleUntil) return;
+        if (!mode.Equals("Always", System.StringComparison.OrdinalIgnoreCase) && !CosmeticAlert.Pinned) return;
 
         var cam = Camera.main;
         if (cam == null) return;
