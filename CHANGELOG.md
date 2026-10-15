@@ -5,6 +5,9 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Información (no cambia la jugabilidad)
+- Minimapa: muestra los monstruos activos con una X naranja (roja y más grande mientras persiguen a alguien).
+
 ## [0.3.5] - 2026-10-14
 
 ### Cambiado

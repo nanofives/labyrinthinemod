@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using Il2CppValkoGames.Labyrinthine.Monsters;
 using UnityEngine;
+using AnimState = Il2Cpp.AnimationState;
 using MazeGenerator = Il2Cpp.MazeGenerator;
 using TileType = Il2CppValkoGames.Labyrinthine.Cases.TileType;
 
@@ -11,7 +14,8 @@ namespace LabyHelper.Features;
 /// MazeGenerator.instance.mazeMap is the generated layout as a TileType grid (Walkable, Wall, Landmark, Safezone,
 /// LandmarkBorder, Start, End); generation runs on every peer, so clients have it too. World/grid conversion comes
 /// from MazeGenerator.GridToWorldPos, sampled at three points so any offset or rotation is handled. Shows you (arrow),
-/// the other players, the cosmetic still on the ground and the exit. F4 shows/hides it.
+/// the other players, the monsters (MonsterNetworkSync, synced to every peer; orange, red while chasing), the cosmetic
+/// still on the ground and the exit. F4 shows/hides it.
 /// </summary>
 internal static class Minimap
 {
@@ -22,6 +26,8 @@ internal static class Minimap
     private static Vector2 _end = new(-1, -1);
     private static float _nextCheck;
     private static GUIStyle _style;
+    private static readonly List<(Vector3 pos, bool chasing)> Monsters = new();
+    private static float _nextMonsters;
     private static Texture2D _arrow;
 
     /// <summary>64x64 arrowhead pointing up: yellow fill, black outline, notched tail so the direction is obvious.</summary>
@@ -74,7 +80,9 @@ internal static class Minimap
             Settings.Save();
             Toast.Show(Settings.MinimapEnabled.Value ? Loc.T("Minimapa: ON", "Minimap: ON") : Loc.T("Minimapa: OFF", "Minimap: OFF"), 2f);
         }
-        if (!Settings.MinimapEnabled.Value || !GameState.InCase || Time.unscaledTime < _nextCheck) return;
+        if (!Settings.MinimapEnabled.Value || !GameState.InCase) return;
+        if (Time.unscaledTime >= _nextMonsters) RefreshMonsters();
+        if (Time.unscaledTime < _nextCheck) return;
         _nextCheck = Time.unscaledTime + 1f;
         try { Build(); }
         catch (Exception e)
@@ -158,6 +166,8 @@ internal static class Minimap
         if (_end.x >= 0) Dot(ToScreen(_end), Mathf.Max(6f, scale * 1.5f), new Color(1f, 0.3f, 0.25f), "S");
         foreach (var (pos, _, _) in CosmeticAlert.PendingTargets())
             Dot(ToScreen(ToGrid(pos)), 8f, new Color(0.35f, 0.69f, 1f), "◆");
+        foreach (var (pos, chasing) in Monsters)
+            Dot(ToScreen(ToGrid(pos)), chasing ? 11f : 9f, chasing ? new Color(1f, 0.15f, 0.1f) : new Color(1f, 0.6f, 0.15f), "X");
         foreach (var p in Players.Others())
             Dot(ToScreen(ToGrid(p.Pos)), 8f, p.Dead ? new Color(1f, 0.45f, 0.4f) : new Color(0.45f, 1f, 0.5f), "●");
 
@@ -186,5 +196,27 @@ internal static class Minimap
         GUI.color = color;
         GUI.Label(rect, glyph, _style);
         GUI.color = Color.white;
+    }
+
+    /// <summary>Active monsters, 4 times a second. Chasing = same test as MonsterAlert (flag or spot/run/charge state).</summary>
+    private static void RefreshMonsters()
+    {
+        _nextMonsters = Time.unscaledTime + 0.25f;
+        Monsters.Clear();
+        try
+        {
+            foreach (var sync in UnityEngine.Object.FindObjectsOfType<MonsterNetworkSync>())
+            {
+                if (sync == null || !sync.IsEnabled) continue;
+                var st = sync.CurrentAnimationState;
+                bool chasing = sync.IsChasingPlayer || st == AnimState.MonsterRun || st == AnimState.MonsterSpot || st == AnimState.MonsterCharge;
+                Monsters.Add((sync.transform.position, chasing));
+            }
+        }
+        catch (Exception e)
+        {
+            Core.Log.Warning($"Minimap: monsters: {e.Message}");
+            _nextMonsters = Time.unscaledTime + 10f;
+        }
     }
 }
