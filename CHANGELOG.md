@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.3] - 2026-10-14
+
 ### Información (no cambia la jugabilidad)
 - Colección (F2): al pasar el mouse por un cosmético se muestra en grande al costado, con nombre, rareza y parte.
 - Al agarrar un cosmético el aviso dice si ya quedó en tu colección o si se guarda al terminar el caso (el juego
