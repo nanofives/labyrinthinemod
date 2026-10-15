@@ -28,6 +28,7 @@ MelonLoader 0.7.3 descomprimido en la carpeta del juego (`version.dll` + `MelonL
 | F1 | Opciones LabyHelper: todas las opciones; la dificultad solo se apaga acá (también botón en la pantalla de opciones del juego) |
 | F3 | Pool del caso en vivo |
 | F2 | Colección: tengo / faltan, tradicionales y HARDCORE (también botón en el menú de cosméticos) |
+| F4 | Minimapa fijo arriba a la derecha (durante los casos) |
 | F5 | Estando caído, te levanta al instante (si "Levantarse solo" está activo en F1) |
 | F10 | Cicla el evento de temporada forzado: Off, Random, Halloween, Christmas, Easter, Valentines, StPatrick, Summer |
 

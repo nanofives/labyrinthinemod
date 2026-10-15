@@ -33,6 +33,20 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] Con pool ampliado: log `PoolBoost: map pool A -> B`.
 - [ ] El cosmético de temporada que sale queda desbloqueado al terminar el caso.
 
+## Cosméticos sin modelo
+- [ ] Log: "BrokenItems: #434 ... has no model in the game files".
+- [ ] Equipar la gorra de Navidad negra: aviso "no tiene modelo ... no se equipa" y el personaje no se traba.
+
+## Grupo
+- [ ] Entra alguien con el mod: no aparece "no tiene LabyHelper" ni se apagan las reglas (log: "join in progress, state kept" a lo sumo).
+- [ ] Entra alguien sin el mod: a los 30 s aparece el aviso y las reglas se apagan para todos (los clientes muestran el motivo del host).
+- [ ] Varios casos seguidos en grupo: todos ven el mismo laberinto y el mismo cosmético.
+
+## Minimapa y glowsticks
+- [ ] En un caso: minimapa arriba a la derecha, el laberinto coincide con lo que recorrés; tu flecha gira con la cámara.
+- [ ] Otros jugadores (verde), cosmético (azul) y salida (S roja) en el lugar correcto. F4 lo oculta y lo vuelve a mostrar.
+- [ ] Con el glowstick en la mano izquierda, cada 15 s cae uno mientras caminás; quieto no tira. Los demás lo ven.
+
 ## Levantarse solo
 - [ ] Viene prendido; solo se apaga en F1 > Partida. F5 fuera de partida no hace nada.
 - [ ] Caído por un monstruo: aparece el aviso nativo de auto-reanimación; mantener la tecla llena la barra y te levanta.

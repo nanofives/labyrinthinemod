@@ -1,0 +1,150 @@
+using System;
+using UnityEngine;
+using MazeGenerator = Il2Cpp.MazeGenerator;
+using TileType = Il2CppValkoGames.Labyrinthine.Cases.TileType;
+
+namespace LabyHelper.Features;
+
+/// <summary>
+/// Fixed (north-up) minimap in the top-right corner during random cases.
+///
+/// MazeGenerator.instance.mazeMap is the generated layout as a TileType grid (Walkable, Wall, Landmark, Safezone,
+/// LandmarkBorder, Start, End); generation runs on every peer, so clients have it too. World/grid conversion comes
+/// from MazeGenerator.GridToWorldPos, sampled at three points so any offset or rotation is handled. Shows you (arrow),
+/// the other players, the cosmetic still on the ground and the exit. F4 shows/hides it.
+/// </summary>
+internal static class Minimap
+{
+    private static Texture2D _tex;
+    private static IntPtr _mapPtr;
+    private static int _sizeX, _sizeY;
+    private static Vector3 _origin, _ax, _ay; // world = origin + gx * ax + gy * ay (x/z used)
+    private static Vector2 _end = new(-1, -1);
+    private static float _nextCheck;
+    private static GUIStyle _style;
+
+    public static void OnSceneLoaded()
+    {
+        _mapPtr = IntPtr.Zero;
+        _end = new Vector2(-1, -1);
+    }
+
+    public static void Update()
+    {
+        if (GameState.InCase && Input.GetKeyDown(KeyCode.F4))
+        {
+            Settings.MinimapEnabled.Value = !Settings.MinimapEnabled.Value;
+            Settings.Save();
+            Toast.Show(Settings.MinimapEnabled.Value ? Loc.T("Minimapa: ON", "Minimap: ON") : Loc.T("Minimapa: OFF", "Minimap: OFF"), 2f);
+        }
+        if (!Settings.MinimapEnabled.Value || !GameState.InCase || Time.unscaledTime < _nextCheck) return;
+        _nextCheck = Time.unscaledTime + 1f;
+        try { Build(); }
+        catch (Exception e)
+        {
+            Core.Log.Warning($"Minimap: {e.Message}");
+            _nextCheck = Time.unscaledTime + 15f;
+        }
+    }
+
+    /// <summary>Builds the texture once per generated maze (the map object changes with every case).</summary>
+    private static void Build()
+    {
+        var gen = MazeGenerator.instance;
+        var map = gen?.mazeMap;
+        if (map == null || map.Pointer == _mapPtr) return;
+        int sx = map.SizeX, sy = map.SizeY;
+        if (sx <= 0 || sy <= 0 || sx > 1024 || sy > 1024) return;
+
+        var px = new Color32[sx * sy];
+        _end = new Vector2(-1, -1);
+        for (int y = 0; y < sy; y++)
+            for (int x = 0; x < sx; x++)
+            {
+                var t = map[x, y];
+                if (t == TileType.End) _end = new Vector2(x, y);
+                px[y * sx + x] = Colour(t);
+            }
+        if (_tex == null || _tex.width != sx || _tex.height != sy)
+        {
+            if (_tex != null) UnityEngine.Object.Destroy(_tex);
+            _tex = new Texture2D(sx, sy, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+            _tex.hideFlags = HideFlags.HideAndDontSave;
+        }
+        _tex.SetPixels32(px);
+        _tex.Apply(false);
+
+        _origin = MazeGenerator.GridToWorldPos(0f, 0f);
+        _ax = MazeGenerator.GridToWorldPos(1f, 0f) - _origin;
+        _ay = MazeGenerator.GridToWorldPos(0f, 1f) - _origin;
+        _sizeX = sx;
+        _sizeY = sy;
+        _mapPtr = map.Pointer;
+        Core.Log.Msg($"Minimap: maze {sx}x{sy}, grid x -> {_ax}, grid y -> {_ay}, origin {_origin}, exit {(_end.x >= 0 ? _end.ToString() : "none")}.");
+    }
+
+    private static Color32 Colour(TileType t) => t switch
+    {
+        TileType.Wall => new Color32(20, 20, 24, 235),
+        TileType.Safezone => new Color32(70, 160, 90, 235),
+        TileType.Landmark or TileType.LandmarkBorder => new Color32(90, 110, 160, 235),
+        TileType.Start => new Color32(220, 200, 80, 235),
+        TileType.End => new Color32(230, 70, 60, 235),
+        _ => new Color32(150, 150, 150, 235),
+    };
+
+    /// <summary>World position -> grid coordinates (fractional), inverting the sampled GridToWorldPos.</summary>
+    private static Vector2 ToGrid(Vector3 world)
+    {
+        float dx = world.x - _origin.x, dz = world.z - _origin.z;
+        float a = _ax.x, b = _ay.x, c = _ax.z, d = _ay.z;
+        float det = a * d - b * c;
+        if (Mathf.Abs(det) < 1e-5f) return new Vector2(-1, -1);
+        return new Vector2((d * dx - b * dz) / det, (-c * dx + a * dz) / det);
+    }
+
+    public static void Draw()
+    {
+        if (!Settings.MinimapEnabled.Value || !GameState.InCase || _tex == null || _mapPtr == IntPtr.Zero) return;
+        float size = Mathf.Clamp(Settings.MinimapSize.Value, 120f, 600f);
+        float scale = size / Mathf.Max(_sizeX, _sizeY);
+        float w = _sizeX * scale, h = _sizeY * scale;
+        var r = new Rect(Screen.width - w - 16, 16, w, h);
+
+        Ui.Panel(new Rect(r.x - 4, r.y - 4, w + 8, h + 8));
+        GUI.DrawTexture(r, _tex, ScaleMode.StretchToFill, true);
+        _style ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+
+        // Grid y grows north; screen y grows down.
+        Vector2 ToScreen(Vector2 g) => new(r.x + (g.x + 0.5f) * scale, r.yMax - (g.y + 0.5f) * scale);
+
+        if (_end.x >= 0) Dot(ToScreen(_end), Mathf.Max(6f, scale * 1.5f), new Color(1f, 0.3f, 0.25f), "S");
+        foreach (var (pos, _, _) in CosmeticAlert.PendingTargets())
+            Dot(ToScreen(ToGrid(pos)), 8f, new Color(0.35f, 0.69f, 1f), "◆");
+        foreach (var p in Players.Others())
+            Dot(ToScreen(ToGrid(p.Pos)), 8f, p.Dead ? new Color(1f, 0.45f, 0.4f) : new Color(0.45f, 1f, 0.5f), "●");
+
+        var cam = Camera.main;
+        if (cam != null)
+        {
+            var me = ToScreen(ToGrid(cam.transform.position));
+            var ahead = ToScreen(ToGrid(cam.transform.position + new Vector3(cam.transform.forward.x, 0, cam.transform.forward.z).normalized * 10f));
+            float angle = Mathf.Atan2(ahead.x - me.x, -(ahead.y - me.y)) * Mathf.Rad2Deg; // 0 = up on screen
+            var saved = GUI.matrix;
+            GUIUtility.RotateAroundPivot(angle, me);
+            Dot(me, 12f, Color.white, "▲");
+            GUI.matrix = saved;
+        }
+    }
+
+    private static void Dot(Vector2 at, float size, Color color, string glyph)
+    {
+        _style.fontSize = Mathf.RoundToInt(Mathf.Clamp(size * 1.6f, 10f, 26f));
+        var rect = new Rect(at.x - 15, at.y - 15, 30, 30);
+        GUI.color = Color.black;
+        GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width, rect.height), glyph, _style);
+        GUI.color = color;
+        GUI.Label(rect, glyph, _style);
+        GUI.color = Color.white;
+    }
+}

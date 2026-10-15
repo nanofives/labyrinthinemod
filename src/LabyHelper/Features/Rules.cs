@@ -12,8 +12,8 @@ namespace LabyHelper.Features;
 /// Cosmetics and maze pieces are generated locally on every peer (RndSpawnerBase.SpawnItem is a plain
 /// Object.Instantiate driven by the maze RNG; MazeGenerator runs on every client), so any change must be identical
 /// on all players or each one sees a different item / different pieces. The lobby owner publishes these values in
-/// Steam lobby member data ("lh_rules") and every modded player uses them; if anyone lacks the mod, Active is
-/// false and the game runs unmodified for everybody. Solo: your own settings.
+/// Steam lobby member data ("lh_rules") together with its on/off decision, and every modded player follows it; if
+/// anyone lacks the mod, the host publishes "off" and the game runs unmodified for everybody. Solo: your own settings.
 /// </summary>
 internal static class Rules
 {
@@ -54,8 +54,16 @@ internal static class Rules
         if (!force && Time.unscaledTime < _next) return;
         _next = Time.unscaledTime + 2f;
 
-        if (!Party.Agreed(Key, Mine(), out var value, out var why))
+        if (!Party.Agreed(Key, Mine(), out var value, out var why, out bool pending))
         {
+            // Someone just joined and their mod hasn't published yet: keep the current state quietly (the host keeps
+            // publishing its last decision, so every modded peer still agrees).
+            if (pending)
+            {
+                if (_last != "pending:" + why) Core.Log.Msg($"Rules: {why} (join in progress, state kept).");
+                _last = "pending:" + why;
+                return;
+            }
             if (Active || _last != "inactive:" + why)
             {
                 Core.Log.Msg($"Rules: off for everyone ({why}).");

@@ -27,6 +27,10 @@ internal static class Settings
     public static MelonPreferences_Entry<float> CaseBoardPostItSize;
     public static MelonPreferences_Entry<bool> SelfReviveAlways;
     public static MelonPreferences_Entry<float> SprintSpeedMultiplier;
+    public static MelonPreferences_Entry<bool> AutoGlowstick;
+    public static MelonPreferences_Entry<float> AutoGlowstickSeconds;
+    public static MelonPreferences_Entry<bool> MinimapEnabled;
+    public static MelonPreferences_Entry<float> MinimapSize;
     public static MelonPreferences_Entry<bool> PoolAddAllSeasonal;
     public static MelonPreferences_Entry<bool> RandomCasesOnlyNew;
     public static MelonPreferences_Entry<bool> DistributeAcrossCases;
@@ -76,6 +80,14 @@ internal static class Settings
             description: "Levantarse solo despues de que un monstruo te tire, sin el item ni ayuda (usa la auto-reanimacion del juego). Se cambia solo en Opciones LabyHelper (F1); estando caido, F5 te levanta.");
         SprintSpeedMultiplier = _cat.CreateEntry("SprintSpeedMultiplier", 1.25f,
             description: "Velocidad al correr de tu jugador (x, 1 = la del juego). No afecta a los monstruos. Cada jugador necesita el mod para tenerla.");
+        AutoGlowstick = _cat.CreateEntry("AutoGlowstick", true,
+            description: "Tira un glowstick solo cada AutoGlowstickSeconds mientras avanzas (si tenes el glowstick en la mano izquierda).");
+        AutoGlowstickSeconds = _cat.CreateEntry("AutoGlowstickSeconds", 15f,
+            description: "Segundos entre glowsticks automaticos (minimo 2).");
+        MinimapEnabled = _cat.CreateEntry("MinimapEnabled", true,
+            description: "Minimapa fijo arriba a la derecha durante los casos. F4 lo muestra/oculta.");
+        MinimapSize = _cat.CreateEntry("MinimapSize", 260f,
+            description: "Lado del minimapa en pixeles (120 a 600).");
         CaseBoardPostIt = _cat.CreateEntry("CaseBoardPostIt", true,
             description: "Post-it con la imagen del exclusivo mas probable que no tenes, debajo del texto de cada carpeta.");
         CaseBoardPostItSize = _cat.CreateEntry("CaseBoardPostItSize", 3f,

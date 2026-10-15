@@ -5,6 +5,26 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Arreglado
+- Ponerse la gorra de Navidad negra (#434) trababa el personaje: el juego la tiene en el pool de Navidad pero su
+  modelo no está en los archivos, así que no puede cargarla. El mod ya no la reparte en los casos y no deja equiparla
+  (ni a vos ni, si sos host, a nadie del grupo); vale para cualquier cosmético sin modelo.
+- Al entrar alguien al lobby aparecía "X no tiene LabyHelper" aunque lo tuviera y se apagaban las reglas: el que
+  entra publicaba sus datos recién a los 15 s. Ahora los publica al instante y, mientras tanto, durante 30 s cuenta
+  como "cargando" (se mantiene el estado y no hay aviso).
+- Posible causa de jugadores desincronizados (otro laberinto o paredes invisibles): cada jugador decidía por su
+  cuenta si las reglas estaban activas, y si el host y otro jugador veían distinto en el momento de arrancar el caso,
+  generaban mapas distintos. Ahora decide solo el host y todos siguen esa decisión. Todos necesitan esta versión.
+
+### Información (no cambia la jugabilidad)
+- Minimapa fijo (norte arriba) arriba a la derecha durante los casos: laberinto completo, vos (flecha), los otros
+  jugadores, el cosmético que queda en el piso y la salida. F4 lo muestra/oculta; tamaño en F1.
+
+### Jugabilidad
+- Glowsticks automáticos: tira uno cada 15 s mientras avanzás (no si estás quieto o caído), igual que con la tecla,
+  así que todos lo ven. Solo si tenés el glowstick en la mano izquierda. Se configura en F1 > Partida.
+
+
 ## [0.3.3] - 2026-10-14
 
 ### Información (no cambia la jugabilidad)

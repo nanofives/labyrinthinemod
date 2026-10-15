@@ -16,8 +16,12 @@ namespace LabyHelper.Features;
 /// </summary>
 internal static class Party
 {
-    private const string Key = "lh_owned";
+    private const string Key = "lh_owned", VersionKey = "lh_ver";
     private const float PublishEvery = 15f, ReadEvery = 3f;
+    // A player who just joined hasn't published yet: they count as "still loading" this long before "no mod".
+    private const float JoinGrace = 30f;
+    private static readonly Dictionary<ulong, float> FirstSeen = new();
+    private static ulong _publishedLobby;
 
     public record Member(ulong SteamId, string Name, bool IsMe, HashSet<ushort> Owned)
     {
@@ -36,14 +40,20 @@ internal static class Party
     {
         if (!Settings.PartySync.Value) return;
         float now = Time.unscaledTime;
-        if (now >= _nextPublish) { _nextPublish = now + PublishEvery; Publish(); }
-        if (now >= _nextRead) { _nextRead = now + ReadEvery; Read(); }
+        if (now >= _nextRead)
+        {
+            _nextRead = now + ReadEvery;
+            // Publish right away in a new lobby (joining used to wait up to 15 s, and the others saw "no mod").
+            if ((Lobby()?.m_SteamID ?? 0) != _publishedLobby) _nextPublish = 0;
+            if (now >= _nextPublish) { _nextPublish = now + PublishEvery; Publish(); }
+            Read();
+        }
     }
 
     /// <summary>Items that at least one player with data doesn't own yet (just you when solo).</summary>
     public static HashSet<ushort> Needed()
     {
-        var all = Catalog.AllIds().ToHashSet();
+        var all = Catalog.AllIds().Where(id => !BrokenItems.IsBroken(id)).ToHashSet(); // never hand out items without a model
         var withData = Members.Where(m => m.HasData).ToList();
         if (withData.Count == 0)
             return all.Where(id => CosmeticAlert.IsUnlocked(id) == false).ToHashSet();
@@ -63,13 +73,18 @@ internal static class Party
     }
 
     /// <summary>
-    /// For settings that change local map generation and therefore must match on every peer: true when everyone
-    /// in the lobby runs the mod; <paramref name="value"/> is the lobby owner's published value (ours when solo).
+    /// For settings that change local map generation and therefore must match on every peer. Only the lobby owner
+    /// decides: it checks that everyone runs the mod and publishes its value with "on=1" or "on=0;why=..."; the
+    /// others just follow that. (Each peer used to decide on its own, so when the host saw a newcomer without data
+    /// and the newcomer saw everyone, they generated different mazes.) <paramref name="value"/> is the owner's
+    /// published value (ours when solo). <paramref name="pending"/>: undecided only because someone joined less than
+    /// JoinGrace seconds ago and hasn't published yet; callers keep their current state.
     /// </summary>
-    public static bool Agreed(string key, string mine, out string value, out string why)
+    public static bool Agreed(string key, string mine, out string value, out string why, out bool pending)
     {
         value = null;
         why = null;
+        pending = false;
         var lobby = Lobby();
         if (lobby == null) { value = mine; return true; } // solo / not a Steam lobby
         try
@@ -77,23 +92,47 @@ internal static class Party
             ulong me = SteamUser.GetSteamID().m_SteamID;
             var owner = SteamMatchmaking.GetLobbyOwner(lobby.Value);
             int n = SteamMatchmaking.GetNumLobbyMembers(lobby.Value);
-            for (int i = 0; i < n; i++)
+            var present = new HashSet<ulong>();
+            for (int i = 0; i < n; i++) present.Add(SteamMatchmaking.GetLobbyMemberByIndex(lobby.Value, i).m_SteamID);
+            foreach (var gone in FirstSeen.Keys.Where(k => !present.Contains(k)).ToList()) FirstSeen.Remove(gone); // rejoin = new grace
+            foreach (var id in present) if (!FirstSeen.ContainsKey(id)) FirstSeen[id] = Time.unscaledTime;
+
+            if (owner.m_SteamID != me)
             {
-                var id = SteamMatchmaking.GetLobbyMemberByIndex(lobby.Value, i);
-                if (id.m_SteamID != me && string.IsNullOrEmpty(SteamMatchmaking.GetLobbyMemberData(lobby.Value, id, Key)))
+                string published = SteamMatchmaking.GetLobbyMemberData(lobby.Value, owner, key);
+                if (string.IsNullOrEmpty(published))
                 {
-                    why = $"{SteamFriends.GetFriendPersonaName(id)} no tiene LabyHelper";
+                    pending = Time.unscaledTime - FirstSeen[me] < JoinGrace;
+                    why = pending ? "esperando al host" : "el host no tiene LabyHelper o no publicó su configuración";
                     return false;
                 }
-            }
-            if (owner.m_SteamID == me)
-            {
-                SteamMatchmaking.SetLobbyMemberData(lobby.Value, key, mine);
-                value = mine;
+                var d = published.Split(';').Select(p => p.Split('=', 2)).Where(p => p.Length == 2)
+                                 .GroupBy(p => p[0]).ToDictionary(g => g.Key, g => g.First()[1]);
+                if (d.TryGetValue("on", out var on) && on == "0")
+                {
+                    why = d.TryGetValue("why", out var w) && w.Length > 0 ? w : "el host las apagó";
+                    return false;
+                }
+                value = published;
                 return true;
             }
-            value = SteamMatchmaking.GetLobbyMemberData(lobby.Value, owner, key);
-            if (string.IsNullOrEmpty(value)) { why = "el host no publicó su configuración"; return false; }
+
+            foreach (var id in present)
+            {
+                if (id == me) continue;
+                var cid = new CSteamID(id);
+                // Any of our keys proves the mod: version and rules go out at once, the owned list once the save loads.
+                if (!string.IsNullOrEmpty(SteamMatchmaking.GetLobbyMemberData(lobby.Value, cid, VersionKey)) ||
+                    !string.IsNullOrEmpty(SteamMatchmaking.GetLobbyMemberData(lobby.Value, cid, Rules.Key)) ||
+                    !string.IsNullOrEmpty(SteamMatchmaking.GetLobbyMemberData(lobby.Value, cid, Key))) continue;
+                string name = Clean(SteamFriends.GetFriendPersonaName(cid));
+                pending = Time.unscaledTime - FirstSeen[id] < JoinGrace;
+                why = pending ? $"esperando a {name}" : $"{name} no tiene LabyHelper";
+                if (!pending) SteamMatchmaking.SetLobbyMemberData(lobby.Value, key, $"{mine};on=0;why={why}");
+                return false;
+            }
+            value = mine;
+            SteamMatchmaking.SetLobbyMemberData(lobby.Value, key, $"{mine};on=1");
             return true;
         }
         catch (Exception e)
@@ -103,14 +142,22 @@ internal static class Party
         }
     }
 
+    private static string Clean(string s) => (s ?? "?").Replace(";", ",").Replace("=", "-");
+
     private static void Publish()
     {
         try
         {
             var lobby = Lobby();
             if (lobby == null) return;
-            // Generation settings everyone must share (see Rules).
-            SteamMatchmaking.SetLobbyMemberData(lobby.Value, Rules.Key, Rules.Mine());
+            if (lobby.Value.m_SteamID != _publishedLobby)
+            {
+                _publishedLobby = lobby.Value.m_SteamID;
+                _lastPublished = null; // new lobby: its member data starts empty
+            }
+            // Presence marker, so the host knows we run the mod before our owned list is ready. The rules key is
+            // written only by the lobby owner (Agreed), with its on/off decision.
+            SteamMatchmaking.SetLobbyMemberData(lobby.Value, VersionKey, BuildInfo.Version);
             var owned = PoolBoost.OwnedIds().ToList();
             if (owned.Count == 0) return; // collection/save not loaded yet: don't tell the lobby we own nothing
             string value = Encode(owned);

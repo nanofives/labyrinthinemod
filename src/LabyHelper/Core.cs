@@ -24,6 +24,7 @@ public class Core : MelonMod
         PoolBoost.Apply(HarmonyInstance);
         SelfRevive.Apply(HarmonyInstance);
         SprintBoost.Apply(HarmonyInstance);
+        BrokenItems.Apply(HarmonyInstance);
         RandomCaseRule.Apply(HarmonyInstance);
         MapVariety.Apply(HarmonyInstance);
 #if EXPERIMENTS
@@ -38,6 +39,8 @@ public class Core : MelonMod
         CosmeticAlert.Update();
         Pigman.Update();
         MonsterAlert.Update();
+        AutoGlowstick.Update();
+        Minimap.Update();
         SelfRevive.Update();
         Party.Update();
         Rules.Refresh();
@@ -69,6 +72,8 @@ public class Core : MelonMod
         CosmeticAlert.OnSceneLoaded();
         Pigman.OnSceneLoaded();
         MonsterAlert.OnSceneLoaded();
+        AutoGlowstick.OnSceneLoaded();
+        Minimap.OnSceneLoaded();
         Collectibles.OnSceneLoaded();
         _learnAt.Clear();
         foreach (var delay in new[] { 5f, 15f, 40f }) _learnAt.Add(Time.unscaledTime + delay);
@@ -77,6 +82,7 @@ public class Core : MelonMod
     public override void OnGUI()
     {
         WorldMarker.Draw();
+        Minimap.Draw();
         PoolViewer.Draw();
         CollectionViewer.Draw();
         OptionsMenu.Draw();
