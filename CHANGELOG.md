@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.11] - 2026-10-27
+
 ### Jugabilidad
 - Los casos custom (cuando elegís el mapa) también siguen la regla de casos random: siempre sale un cosmético y es uno
   que le falta a alguien del grupo. Antes quedaban como el juego (15% en casos normales).
