@@ -54,7 +54,6 @@ internal static class WorldMarker
             GUI.color = Color.white;
         }
 
-        if (Settings.CollectibleMarkers.Value) DrawCollectibles(cam);
     }
 
     private static readonly Color PlayerColor = new(0.45f, 1f, 0.5f), DownColor = new(1f, 0.45f, 0.4f);
@@ -62,6 +61,7 @@ internal static class WorldMarker
     /// <summary>Other players, pinned to the screen edge when off-screen (same style as the cosmetic marker).</summary>
     private static void DrawPlayers(Camera cam)
     {
+        var missing = CosmeticAlert.StillToPickUp();
         foreach (var p in Players.Others())
         {
             Vector3 sp = cam.WorldToScreenPoint(p.Pos + Vector3.up * 2.1f);
@@ -75,7 +75,10 @@ internal static class WorldMarker
 
             float meters = Vector3.Distance(cam.transform.position, p.Pos);
             string name = p.Dead ? $"{p.Name} {Loc.T("(caído)", "(down)")}" : p.Name;
-            string label = offscreen ? $"{Arrow(x, y)} {name}\n{meters:0} m" : $"▼ {name}\n{meters:0} m";
+            // Still has to pick up the case cosmetic (only known for players with the mod).
+            string todo = missing.Exists(m => !m.IsMe && m.Name.Equals(p.Name, System.StringComparison.OrdinalIgnoreCase))
+                ? Loc.T("  ◆ falta el cosmético", "  ◆ cosmetic not picked up") : "";
+            string label = offscreen ? $"{Arrow(x, y)} {name}\n{meters:0} m{todo}" : $"▼ {name}\n{meters:0} m{todo}";
             var rect = new Rect(x - 150, y - 25, 300, 50);
             GUI.color = Color.black;
             GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), label, _style);
@@ -105,26 +108,6 @@ internal static class WorldMarker
     }
 
     private static GUIStyle _small;
-
-    /// <summary>Tickets, reroll coins and XP: the nearest ones in front of the camera, no edge arrows (less clutter).</summary>
-    private static void DrawCollectibles(Camera cam)
-    {
-        _small ??= new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-        var camPos = cam.transform.position;
-        foreach (var c in Collectibles.Live.OrderBy(i => (i.Pos - camPos).sqrMagnitude).Take(Settings.CollectibleMaxMarkers.Value))
-        {
-            Vector3 sp = cam.WorldToScreenPoint(c.Pos + Vector3.up * 0.3f);
-            if (sp.z < 0 || sp.x < 0 || sp.x > Screen.width || sp.y < 0 || sp.y > Screen.height) continue;
-            float meters = Vector3.Distance(camPos, c.Pos);
-            string label = $"● {Collectibles.Label(c.Type)}{(c.Amount > 1 ? $" x{c.Amount}" : "")}  {meters:0} m";
-            var rect = new Rect(sp.x - 110, Screen.height - sp.y - 12, 220, 24);
-            GUI.color = Color.black;
-            GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width, rect.height), label, _small);
-            GUI.color = Collectibles.Color(c.Type);
-            GUI.Label(rect, label, _small);
-            GUI.color = Color.white;
-        }
-    }
 
     private static string Arrow(float x, float y)
     {

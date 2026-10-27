@@ -66,7 +66,8 @@ internal static class Toast
         var info = Entries[Slot.Info];
         if (info.Text != null && Time.unscaledTime <= info.Until)
         {
-            float y = 20;
+            // Below the game's case conditions in the top-left corner (height set in F1).
+            float y = Screen.height * Mathf.Clamp(LabyHelper.Settings.HudTextTop.Value, 0f, 80f) / 100f;
             y = DrawText(20, y, info.Text);
             if (info.Rows != null)
             {
@@ -82,7 +83,25 @@ internal static class Toast
 
         var alert = Entries[Slot.Alert];
         if (alert.Text != null && Time.unscaledTime <= alert.Until)
-            DrawShadowed(new Rect(0, Screen.height * 0.12f, Screen.width, 40), alert.Text, _alert, new Color(1f, 0.45f, 0.35f));
+        {
+            // Red and blinking (about 3 times a second) over a dark red band, so a chase can't go unnoticed.
+            bool lit = Mathf.Repeat(Time.unscaledTime * 3f, 1f) < 0.6f;
+            var band = new Rect(0, Screen.height * 0.12f - 6, Screen.width, 52);
+            _band ??= Solid(new Color(0.35f, 0f, 0f, 0.55f));
+            GUI.DrawTexture(band, _band);
+            DrawShadowed(new Rect(0, band.y + 6, Screen.width, 40), alert.Text, _alert,
+                lit ? new Color(1f, 0.1f, 0.08f) : new Color(1f, 0.1f, 0.08f, 0.25f));
+        }
+    }
+
+    private static Texture2D _band;
+
+    private static Texture2D Solid(Color c)
+    {
+        var t = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
+        t.SetPixel(0, 0, c);
+        t.Apply();
+        return t;
     }
 
     private static float DrawText(float x, float y, string text)

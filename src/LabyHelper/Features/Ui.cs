@@ -43,6 +43,64 @@ internal static class Ui
         return clicked;
     }
 
+    private static readonly System.Collections.Generic.HashSet<string> Holders = new();
+    private static bool _savedControl = true;
+    private static bool? _savedLook;
+    private static CursorLockMode _savedLock = CursorLockMode.Locked;
+    private static bool _savedVisible;
+
+    /// <summary>
+    /// While a panel (F1, F2) is open over gameplay: the player stops moving and looking around and the cursor is free,
+    /// the same way the game's own full-screen popups do it (TutorialFullScreenPopup.Show: PlayerControl.CanControl =
+    /// false, LabyrinthineInputManager.SetActionSet(menu: true), cursor unlocked). Released when the last panel closes.
+    /// Not used when the panel opens from one of the game's menus, which already handle input.
+    /// </summary>
+    public static void Capture(string who, bool on)
+    {
+        bool before = Holders.Count > 0;
+        // Only over gameplay: menus have no player, and relocking the cursor there would hide it.
+        if (on && GameState.InMenu) return;
+        // A free cursor means one of the game's menus is up (customization, pause...): it already handles input.
+        if (on && Holders.Count == 0 && Cursor.lockState != CursorLockMode.Locked) return;
+        if (on) Holders.Add(who); else Holders.Remove(who);
+        bool now = Holders.Count > 0;
+        if (now == before) return;
+        try
+        {
+            var look = Il2Cpp.PlayerLook.Instance; // the camera has its own switch
+            if (now)
+            {
+                _savedLock = Cursor.lockState;
+                _savedVisible = Cursor.visible;
+                _savedControl = Il2Cpp.PlayerControl.CanControl;
+                Il2Cpp.PlayerControl.CanControl = false;
+                _savedLook = look != null ? look.CanControl : null;
+                if (look != null) look.CanControl = false;
+                Il2Cpp.LabyrinthineInputManager.SetActionSet(true);
+            }
+            else
+            {
+                Il2Cpp.PlayerControl.CanControl = _savedControl;
+                if (look != null && _savedLook != null) look.CanControl = _savedLook.Value;
+                Il2Cpp.LabyrinthineInputManager.SetActionSet(false);
+                // Back to how the cursor was when the panel opened (locked in gameplay, free in a game menu).
+                Cursor.lockState = _savedLock;
+                Cursor.visible = _savedVisible;
+            }
+        }
+        catch (System.Exception e) { Core.Log.Warning($"Ui: input capture: {e.Message}"); }
+    }
+
+    public static bool Captured => Holders.Count > 0;
+
+    /// <summary>Every frame while captured: gameplay keeps relocking the cursor.</summary>
+    public static void KeepCursorFree()
+    {
+        if (Holders.Count == 0) return;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
     /// <summary>Scroll offset driven by keys too, since the cursor is locked during gameplay.</summary>
     public static float KeyScroll(float scroll, float max)
     {

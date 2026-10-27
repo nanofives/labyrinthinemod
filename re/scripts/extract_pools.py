@@ -23,7 +23,8 @@ DUMMY = os.path.join(HERE, "..", "il2cpp-dump", "DummyDll")
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", "..", "src", "LabyHelper", "pools.default.json")
 
 MAZE_TYPES = ["Maze_A", "Maze_B", "Maze_C", "Maze_D", "Maze_E", "Maze_F", "Maze_G", "Maze_H", "Maze_I", "Maze_J",
-              "Maze_K", "Maze_L", "Maze_M", "Maze_N", "Maze_O", "Maze_P", "Maze_Backrooms", "Maze_Q", "Maze_R"]
+              "Maze_K", "Maze_L", "Maze_M", "Maze_N", "Maze_O", "Maze_P", "Maze_Backrooms", "Maze_Q", "Maze_R",
+              "DLC_Egypt_A", "DLC_Egypt_B"]
 EVENTS = ["Halloween", "Christmas", "Easter", "Valentines", "StPatrick", "Summer"]
 CONTRACT_TYPES = ["Normal", "Rare", "Hardcore"]
 

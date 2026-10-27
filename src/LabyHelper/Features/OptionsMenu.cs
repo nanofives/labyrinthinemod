@@ -6,12 +6,15 @@ namespace LabyHelper.Features;
 
 /// <summary>
 /// "Opciones LabyHelper": every mod setting in one panel. A button shows up while the game's own settings screen
-/// is open (detected through LabyrinthineSettingsManager's controls being visible); F1 opens it anywhere.
+/// is open (detected through LabyrinthineSettingsManager's controls being visible); F1 opens it in menus, the lobby
+/// and, during a case, while you stand in a safe zone (it closes when you leave). A bar across the top of the screen
+/// lists the F keys and what each does, whenever F1 can be used.
 /// The difficulty gate can only be switched off here (no hotkey), by design.
 /// </summary>
 internal static class OptionsMenu
 {
-    private const float RowH = 30f;
+    private const float RowH = 39f; // text is 1.5x the base IMGUI size (by request)
+    private static float _contentH = 1500f; // measured on the previous frame
     private static bool _open, _settingsOpen, _dirty;
     private static float _saveAt;
     private static float _scroll, _nextCheck;
@@ -27,7 +30,7 @@ internal static class OptionsMenu
 
     public static void Update()
     {
-        if (GameState.InCase) { SetOpen(false); _settingsOpen = false; return; } // panels are lobby/menu only
+        if (!Allowed) { SetOpen(false); _settingsOpen = false; return; }
         if (Input.GetKeyDown(KeyCode.F1)) SetOpen(!_open);
         if (Time.unscaledTime >= _nextCheck)
         {
@@ -46,6 +49,17 @@ internal static class OptionsMenu
         }
     }
 
+    public static void OnSceneLoaded() => SetOpen(false);
+
+    private static float _top = 8f; // below the F-key bar when it's on screen (updated every frame)
+
+    /// <summary>Where the F1 panel goes; the F2 collection uses the same rectangle.</summary>
+    public static Rect PanelRect()
+    {
+        float w = Mathf.Min(840f, Screen.width - 32f);
+        return new Rect(Screen.width / 2f - w / 2f, _top, w, Screen.height - _top - 16f);
+    }
+
     private static void SetOpen(bool open)
     {
         if (open == _open) return;
@@ -54,15 +68,21 @@ internal static class OptionsMenu
         {
             _prevLock = Cursor.lockState;
             _prevVisible = Cursor.visible;
+            // Over gameplay (not from the game's settings screen): stop the player and free the cursor.
+            Ui.Capture("F1", !_settingsOpen);
         }
         else
         {
+            Ui.Capture("F1", false);
             Settings.Save();
             Cursor.lockState = _prevLock;
             Cursor.visible = _prevVisible;
             CaseBoard.RefreshAll();
         }
     }
+
+    /// <summary>Menus and lobby, or a case while you're in a safe zone.</summary>
+    private static bool Allowed => !GameState.InCase || Players.MeInSafeZone();
 
     private static bool GameSettingsVisible()
     {
@@ -80,21 +100,25 @@ internal static class OptionsMenu
 
     public static void Draw()
     {
+        float top = 8f;
+        if (_open || CollectionViewer.IsOpen || (Allowed && (GameState.InLobby || GameState.InCase))) top = HotkeyBar.Draw(top) + 8f;
+        _top = top;
         if (_settingsOpen && !_open)
         {
             if (Ui.Tab(new Rect(Screen.width - 230, Screen.height - 70, 210, 44), Loc.T("Opciones LabyHelper (F1)", "LabyHelper options (F1)"), false)) SetOpen(true);
         }
         if (!_open) return;
 
-        var area = new Rect(Screen.width / 2f - 330, 50, 660, Screen.height - 100);
+        var area = PanelRect();
+        Styles();
         Ui.Panel(area);
         float x = area.x + 16, y = area.y + 10, w = area.width - 32;
-        Ui.Text(new Rect(x, y, w - 50, 28), Loc.T($"Opciones LabyHelper {BuildInfo.Version}", $"LabyHelper options {BuildInfo.Version}"), Ui.Header, Color.white);
-        if (GUI.Button(new Rect(area.xMax - 46, y, 30, 26), "X")) { SetOpen(false); return; }
-        y += 34;
+        Ui.Text(new Rect(x, y, w - 60, 42), Loc.T($"Opciones LabyHelper {BuildInfo.Version}", $"LabyHelper options {BuildInfo.Version}"), _header, Color.white);
+        if (GUI.Button(new Rect(area.xMax - 58, y, 42, 38), "X", _button)) { SetOpen(false); return; }
+        y += 48;
 
         var view = new Rect(x, y, w, area.yMax - y - 10);
-        float contentH = 56 * RowH + 12 * 34;
+        float contentH = _contentH;
         UpdateInfo.CheckOnce();
         var s = GUI.BeginScrollView(view, new Vector2(0, _scroll), new Rect(0, 0, w - 20, contentH));
         _scroll = s.y;
@@ -105,7 +129,7 @@ internal static class OptionsMenu
 
         Section(ref cy, cw, Loc.T("Actualizaciones", "Updates"));
         Toggle(ref cy, cw, Loc.T("Actualizar solo al abrir el juego", "Update automatically when the game starts"), Settings.AutoUpdate);
-        Ui.Text(new Rect(10, cy, cw - 10, RowH), UpdateStatus(), Ui.Small, UpdateInfo.NewerAvailable ? new Color(1f, 0.9f, 0.5f) : Color.gray);
+        Ui.Text(new Rect(10, cy, cw - 10, RowH), UpdateStatus(), _small, UpdateInfo.NewerAvailable ? new Color(1f, 0.9f, 0.5f) : Color.gray);
         cy += RowH;
 
         Section(ref cy, cw, Loc.T("Dificultad (host)", "Difficulty (host)"));
@@ -128,9 +152,9 @@ internal static class OptionsMenu
         Section(ref cy, cw, Loc.T("Avisos", "Alerts"));
         Toggle(ref cy, cw, Loc.T("Aviso del cosmético del caso", "Case cosmetic alert"), Settings.CosmeticAlertEnabled);
         Slider(ref cy, cw, Loc.T("Segundos del aviso", "Alert seconds"), Settings.CosmeticAlertSeconds, 2f, 30f, "0");
+        Slider(ref cy, cw, Loc.T("Altura del texto de la izquierda (% desde arriba)", "Left text height (% from the top)"), Settings.HudTextTop, 0f, 70f, "0");
         Cycle(ref cy, cw, Loc.T("Marcador en el mundo (F9)", "World marker (F9)"), Settings.MarkerMode, MarkerModes);
         Toggle(ref cy, cw, Loc.T("F9 prendido al empezar cada caso", "F9 on when each case starts"), Settings.CosmeticPanelOnByDefault);
-        Toggle(ref cy, cw, Loc.T("Marcar tickets, fichas de reroll y XP", "Mark tickets, reroll coins and XP"), Settings.CollectibleMarkers);
         Slider(ref cy, cw, Loc.T("Alcance del sonido del Pigman (x, menos = más silencioso)", "Pigman sound range (x, lower = quieter)"), Settings.PigmanAudioMultiplier, 0.2f, 3f, "0.0");
         Toggle(ref cy, cw, Loc.T("Cartel cuando un monstruo te persigue", "Banner when a monster chases you"), Settings.MonsterChaseAlert);
 
@@ -147,6 +171,7 @@ internal static class OptionsMenu
         Section(ref cy, cw, Loc.T("Partida", "Gameplay"));
         Toggle(ref cy, cw, Loc.T("Levantarse solo", "Get up on your own"), Settings.SelfReviveAlways);
         Slider(ref cy, cw, Loc.T("Velocidad al correr (x, juego: 1)", "Sprint speed (x, game: 1)"), Settings.SprintSpeedMultiplier, 1f, 2f, "0.00");
+        Toggle(ref cy, cw, Loc.T("Prender la linterna al empezar el caso", "Switch the flashlight on when the case starts"), Settings.AutoFlashlight);
         Toggle(ref cy, cw, Loc.T("Tirar glowsticks solo", "Drop glowsticks automatically"), Settings.AutoGlowstick);
         Slider(ref cy, cw, Loc.T("Cada cuántos segundos", "Every N seconds"), Settings.AutoGlowstickSeconds, 1f, 60f, "0");
         Toggle(ref cy, cw, Loc.T("Minimapa (F4)", "Minimap (F4)"), Settings.MinimapEnabled);
@@ -159,10 +184,23 @@ internal static class OptionsMenu
         Cycle(ref cy, cw, Loc.T("Mapa donante", "Donor map"), Settings.ExperimentDonorMaze, DonorMazes);
 #endif
 
+        _contentH = cy + 8f; // exact height for next frame's scroll range (no empty space after the last row)
         GUI.EndScrollView();
     }
 
     // ---- controls ----
+
+    // 1.5x the mod's usual sizes (by request).
+    private static GUIStyle _small, _bold, _header, _toggle, _button;
+
+    private static void Styles()
+    {
+        _small ??= new GUIStyle(Ui.Small) { fontSize = 20 };
+        _bold ??= new GUIStyle(Ui.Bold) { fontSize = 22 };
+        _header ??= new GUIStyle(Ui.Header) { fontSize = 28 };
+        _toggle ??= new GUIStyle(GUI.skin.toggle) { fontSize = 20, alignment = TextAnchor.MiddleLeft };
+        _button ??= new GUIStyle(GUI.skin.button) { fontSize = 20 };
+    }
 
     private static string UpdateStatus()
     {
@@ -180,40 +218,40 @@ internal static class OptionsMenu
 
     private static void Section(ref float y, float w, string title)
     {
-        y += 8;
-        Ui.Text(new Rect(0, y, w, 26), title, Ui.Bold, new Color(0.6f, 0.8f, 1f));
-        y += 26;
+        y += 12;
+        Ui.Text(new Rect(0, y, w, 39), title, _bold, new Color(0.6f, 0.8f, 1f));
+        y += 39;
     }
 
     private static void Toggle(ref float y, float w, string label, MelonPreferences_Entry<bool> e)
     {
-        bool v = GUI.Toggle(new Rect(10, y + 4, w - 10, RowH - 4), e.Value, "  " + label);
+        bool v = GUI.Toggle(new Rect(10, y + 4, w - 10, RowH - 4), e.Value, "  " + label, _toggle);
         if (v != e.Value) { e.Value = v; Settings.Save(); }
         y += RowH;
     }
 
     private static void Slider(ref float y, float w, string label, MelonPreferences_Entry<float> e, float min, float max, string fmt)
     {
-        Ui.Text(new Rect(10, y, w * 0.55f, RowH), label, Ui.Small, Color.white);
-        float v = GUI.HorizontalSlider(new Rect(w * 0.57f, y + 10, w * 0.3f, 18), e.Value, min, max);
+        Ui.Text(new Rect(10, y, w * 0.55f, RowH), label, _small, Color.white);
+        float v = GUI.HorizontalSlider(new Rect(w * 0.57f, y + 16, w * 0.3f, 18), e.Value, min, max);
         if (Math.Abs(v - e.Value) > 0.0001f) { e.Value = (float)Math.Round(v, 2); _dirty = true; }
-        Ui.Text(new Rect(w * 0.89f, y, w * 0.11f, RowH), e.Value.ToString(fmt), Ui.Small, Color.white);
+        Ui.Text(new Rect(w * 0.89f, y, w * 0.11f, RowH), e.Value.ToString(fmt), _small, Color.white);
         y += RowH;
     }
 
     private static void IntSlider(ref float y, float w, string label, MelonPreferences_Entry<int> e, int min, int max)
     {
-        Ui.Text(new Rect(10, y, w * 0.55f, RowH), label, Ui.Small, Color.white);
-        int v = Mathf.RoundToInt(GUI.HorizontalSlider(new Rect(w * 0.57f, y + 10, w * 0.3f, 18), e.Value, min, max));
+        Ui.Text(new Rect(10, y, w * 0.55f, RowH), label, _small, Color.white);
+        int v = Mathf.RoundToInt(GUI.HorizontalSlider(new Rect(w * 0.57f, y + 16, w * 0.3f, 18), e.Value, min, max));
         if (v != e.Value) { e.Value = v; _dirty = true; }
-        Ui.Text(new Rect(w * 0.89f, y, w * 0.11f, RowH), e.Value.ToString(), Ui.Small, Color.white);
+        Ui.Text(new Rect(w * 0.89f, y, w * 0.11f, RowH), e.Value.ToString(), _small, Color.white);
         y += RowH;
     }
 
     private static void Cycle(ref float y, float w, string label, MelonPreferences_Entry<string> e, string[] options)
     {
-        Ui.Text(new Rect(10, y, w * 0.55f, RowH), label, Ui.Small, Color.white);
-        if (GUI.Button(new Rect(w * 0.57f, y + 3, w * 0.3f, RowH - 6), e.Value))
+        Ui.Text(new Rect(10, y, w * 0.55f, RowH), label, _small, Color.white);
+        if (GUI.Button(new Rect(w * 0.57f, y + 3, w * 0.3f, RowH - 6), e.Value, _button))
         {
             int i = Array.FindIndex(options, o => o.Equals(e.Value, StringComparison.OrdinalIgnoreCase));
             e.Value = options[(i + 1) % options.Length];

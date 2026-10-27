@@ -93,8 +93,56 @@ internal static class Catalog
         return list;
     }
 
+    /// <summary>
+    /// False for what the game's own menu hides (CustomizationUIController.UpdateItemsUI): items without a model
+    /// (CustomizationItemExtensions.IsValid, an AssetReference with a runtime key; placeholders like "Rounded Circle
+    /// 64px") and DLC cosmetics whose DLC this player doesn't own.
+    /// </summary>
+    public static bool Available(ushort id)
+    {
+        try
+        {
+            var item = ItemById(id);
+            if (!CustomizationItemExtensions.IsValid(item)) return Hide(id, "no model");
+            // Unfinished entries borrow the music tracks' generic icon ("Rounded Circle 64px"), e.g. #253, a Rare wrist
+            // item: a non-music item with that icon isn't a real cosmetic.
+            if (item.BodyPart != BodyPart.Music && item.Icon != null && MusicIcons().Contains(item.Icon.Pointer))
+                return Hide(id, "placeholder icon");
+            if (!Il2CppValkoGames.Labyrinthine.DLCManager.IsCosmeticPartOfDLC(id, out var dlc)) return true;
+            return Il2CppValkoGames.Labyrinthine.DLCManager.IsDLCAvailable(dlc);
+        }
+        catch { return true; /* Steam not ready */ }
+    }
+
+    private static readonly HashSet<ushort> HiddenLogged = new();
+    private static HashSet<System.IntPtr> _musicIcons;
+    private static ItemsCollectionSO _musicIconsFrom;
+
+    /// <summary>The icon sprites the music tracks use (one generic circle), cached per collection.</summary>
+    private static HashSet<System.IntPtr> MusicIcons()
+    {
+        var col = Collection();
+        if (_musicIcons != null && _musicIconsFrom == col) return _musicIcons;
+        _musicIconsFrom = col;
+        _musicIcons = new HashSet<System.IntPtr>();
+        foreach (var it in ById.Values)
+            if (it.BodyPart == BodyPart.Music && it.Icon != null) _musicIcons.Add(it.Icon.Pointer);
+        return _musicIcons;
+    }
+
+    private static bool Hide(ushort id, string why)
+    {
+        if (HiddenLogged.Add(id)) Core.Log.Msg($"Catalog: hiding #{id} {CosmeticAlert.Name(id)} from the collection ({why}).");
+        return false;
+    }
+
     /// <summary>Rarity as shown everywhere in the mod; hardcore stands out from the traditional ones.</summary>
-    public static string RarityLabel(ItemRarity r) => r == ItemRarity.Hardcore ? "HARDCORE" : r.ToString();
+    public static string RarityLabel(ItemRarity r) => r switch
+    {
+        ItemRarity.Hardcore => "HARDCORE",
+        ItemRarity.DLC_Egyptian => Loc.T("DLC Egipto", "Egyptian DLC"),
+        _ => r.ToString(),
+    };
 
     public static Color RarityColor(ItemRarity r) => r switch
     {
@@ -104,6 +152,7 @@ internal static class Catalog
         ItemRarity.Event => new Color(1f, 0.75f, 0.3f),
         ItemRarity.Hardcore => new Color(1f, 0.3f, 0.3f),
         ItemRarity.Limited => new Color(0.8f, 0.5f, 1f),
+        ItemRarity.DLC_Egyptian => new Color(0.95f, 0.8f, 0.45f),
         _ => Color.white,
     };
 
@@ -115,6 +164,7 @@ internal static class Catalog
         ["Maze_J"] = ("Carnival", "Carnaval"), ["Maze_K"] = ("Mines", "Minas"), ["Maze_L"] = ("Snowy Hedges", "Setos Nevados"),
         ["Maze_M"] = ("Ruins", "Ruinas"), ["Maze_N"] = ("Dead Forest", "Bosque Muerto"), ["Maze_O"] = ("Fog City", "Ciudad de la Niebla"),
         ["Maze_P"] = ("Bamboo Forest", "Bosque de Bambú"), ["Maze_Backrooms"] = ("Backrooms", "Backrooms"),
+        ["DLC_Egypt_A"] = ("Egypt A", "Egipto A"), ["DLC_Egypt_B"] = ("Egypt B", "Egipto B"),
     };
 
     /// <summary>Map display name from the game's own quest texts (quest_CCMaze_X); falls back to the ID.</summary>

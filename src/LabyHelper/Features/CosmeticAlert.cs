@@ -13,8 +13,7 @@ namespace LabyHelper.Features;
 /// Announces the cosmetic that spawned in the current case. CustomizationPickup.Start runs on host and
 /// clients alike (the pickup is a networked spawn), so this works without being host.
 /// Each item is tagged by pool: map-exclusive (a spawner's possiblePrefabs), common (globalPrefabs),
-/// or seasonal (RndCustomizationItemsManager.seasonalItems). F9 repeats it with distance and direction,
-/// plus the map's exclusive pool.
+/// or seasonal (RndCustomizationItemsManager.seasonalItems). F9 repeats it with distance and direction.
 /// </summary>
 internal static class CosmeticAlert
 {
@@ -130,6 +129,33 @@ internal static class CosmeticAlert
         return string.Join("\n", lines);
     }
 
+    /// <summary>
+    /// Party members (by name) who still haven't picked up a cosmetic of this case, for the minimap line and the player
+    /// markers. Empty when there's no cosmetic or you play alone; members without the mod aren't known, so not listed.
+    /// </summary>
+    public static List<Party.Member> StillToPickUp()
+    {
+        var missing = new List<Party.Member>();
+        if (Time.unscaledTime < _nextMissing) return _missing;
+        _nextMissing = Time.unscaledTime + 0.5f;
+        Live.RemoveAll(p => p == null || p.WasCollected);
+        var ids = Live.Select(p => p.ItemID).Concat(PickedUp).ToHashSet();
+        if (ids.Count > 0 && Party.Members.Count(m => !m.IsMe) > 0)
+        {
+            int seed = CaseSeed();
+            foreach (var m in Party.Members)
+            {
+                if (m.IsMe) { if (ids.Any(id => !PickedUp.Contains(id))) missing.Add(m); continue; }
+                if (Party.PickedBy.TryGetValue(m.SteamId, out var p) && p.seed == seed && ids.Any(id => !p.ids.Contains(id)))
+                    missing.Add(m);
+            }
+        }
+        return _missing = missing;
+    }
+
+    private static List<Party.Member> _missing = new();
+    private static float _nextMissing;
+
     private static void ContractFinishedPostfix()
     {
         if (Pending.Count == 0) return;
@@ -153,7 +179,12 @@ internal static class CosmeticAlert
             _announceAt = -1f;
             Announce(withLocation: false, seconds: Settings.CosmeticAlertSeconds.Value);
         }
-        if (Input.GetKeyDown(KeyCode.F9))
+        if (Input.GetKeyDown(KeyCode.F9) && !GameState.InCase)
+        {
+            Pinned = false;
+            Toast.Show(Loc.T("No estás en un caso.", "You're not in a case."), 2.5f);
+        }
+        else if (Input.GetKeyDown(KeyCode.F9))
         {
             Pinned = !Pinned;
             if (Pinned) _nextPinned = 0f;
@@ -188,21 +219,11 @@ internal static class CosmeticAlert
         foreach (var p in pending)
         {
             var (icon, frame) = Visuals(p.ItemID);
-            string text = Describe(p.ItemID);
-            if (withLocation) text += $"\n{Locate(p.transform.position)} {Loc.T("en línea recta", "as the crow flies")}";
+            string text = Short(p.ItemID); // the world marker and minimap already give the direction
             rows.Add(new Toast.ItemRow(icon, frame, text));
         }
 
         string footer = null;
-        if (withLocation)
-        {
-            EnsurePools();
-            if (_exclusive is { Count: > 0 })
-                footer = Loc.T("Exclusivos posibles de este mapa: ", "Possible map exclusives: ") +
-                         string.Join(", ", _exclusive.Select(id => $"{Name(id)}{(IsUnlocked(id) == true ? Loc.T(" (ya)", " (owned)") : "")}"));
-        }
-        if (withLocation && Settings.CollectibleMarkers.Value && Collectibles.Summary() is string col)
-            footer = footer == null ? col : footer + "\n" + col;
         if (withLocation && Objectives.Pending.Count > 0)
         {
             // Nearest first; the full set is on the minimap and the world markers.
@@ -241,6 +262,13 @@ internal static class CosmeticAlert
             VisualsCache[itemID] = (icon, frame);
         }
         return (icon, frame);
+    }
+
+    /// <summary>"Flamingo_Blue - NUEVO": the on-screen line, without rarity, pool or distance.</summary>
+    public static string Short(ushort itemID)
+    {
+        string owned = IsUnlocked(itemID) switch { true => Loc.T("ya lo tenés", "owned"), false => Loc.T("NUEVO", "NEW"), _ => "?" };
+        return $"{Name(itemID)} - {owned}";
     }
 
     public static string Describe(ushort itemID, bool includePool = true)

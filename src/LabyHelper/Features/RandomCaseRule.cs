@@ -13,7 +13,7 @@ using WeightedPrefabSetSO = Il2CppValkoGames.Labyrinthine.Data.WeightedPrefabSet
 namespace LabyHelper.Features;
 
 /// <summary>
-/// Host rule for the random case files on the board (not custom cases, not story):
+/// Host rule for random cases, from the board or custom (story levels have no cosmetic spawner):
 ///  - a cosmetic always spawns (chanceForItem[type] = 1 for that SpawnCustomizationItems call);
 ///  - it is always one the party still needs, from the set Distribution assigned to this case;
 ///  - the item is picked here (seeded by the contract, identical on every modded peer, since cosmetics are spawned
@@ -23,7 +23,8 @@ namespace LabyHelper.Features;
 /// seasonal list. For the duration of Spawn we point globalPrefabs at an empty set, put only the allowed prefabs
 /// (from the global, map and seasonal pools loaded in this scene) in possiblePrefabs, and zero the seasonal
 /// chances, so the game's own weighted pick runs over allowed items only. Everything is restored afterwards.
-/// Other cases keep the game's behaviour. Off only from the options menu (by request).
+/// Custom cases aren't on the board, so they have no assigned set or frozen pick: they draw from everything the party
+/// still needs (same seeded pick on every peer). Off only from the options menu (by request).
 /// </summary>
 internal static class RandomCaseRule
 {
@@ -50,8 +51,8 @@ internal static class RandomCaseRule
         Core.Log.Msg($"RandomCaseRule: hooked (enabled: {Settings.RandomCasesOnlyNew.Value}, distribute: {Settings.DistributeAcrossCases.Value}).");
     }
 
-    /// <summary>True when this contract is a random case file and the rule is on.</summary>
-    public static bool Applies(Contract c) => Rules.Active && Rules.OnlyNew && c != null && !c.IsCustom;
+    /// <summary>True when the rule is on (random case files and custom cases alike; story levels have no spawner).</summary>
+    public static bool Applies(Contract c) => Rules.Active && Rules.OnlyNew && c != null;
 
     private static Contract Current() => Il2Cpp.GameValues.instance?.RandomMazeContract;
 

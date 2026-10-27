@@ -110,6 +110,11 @@ internal static class MonsterAlert
         MonsterType.BlackBride_Crimson => "Crimson Bride",
         MonsterType.Oni_Ash => "Ash Oni",
         MonsterType.ChainsawMan => "Chainsaw Man",
+        MonsterType.DLC_Egyptian_Anubis => "Anubis",
+        MonsterType.DLC_Egyptian_Mummy => "Mummy",
+        MonsterType.DLC_Egyptian_Sand_Zombie => "Sand Zombie",
+        MonsterType.DLC_Egyptian_Forewarned_Ouphris => "Ouphris",
+        MonsterType.DLC_Egyptian_Forewarned_Necreph => "Necreph",
         _ => t.ToString(),
     };
 }

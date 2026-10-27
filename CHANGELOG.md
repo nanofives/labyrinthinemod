@@ -5,6 +5,47 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Jugabilidad
+- Los casos custom (cuando elegís el mapa) también siguen la regla de casos random: siempre sale un cosmético y es uno
+  que le falta a alguien del grupo. Antes quedaban como el juego (15% en casos normales).
+- La linterna arranca en la mano derecha y prendida en cada caso que la tiene. Se apaga en F1 > Partida.
+
+### Información (no cambia la jugabilidad)
+- El cartel de un monstruo que te persigue es rojo, parpadea y tiene una franja roja de fondo.
+- Objetivos del caso en el minimapa: ahora se encuentran aunque estén lejos (el juego apaga las zonas lejanas y antes
+  no se veían). Suma los objetivos en landmarks y los puzzles egipcios (pilares, balanza y sus pesas).
+- El aviso del cosmético queda justo debajo de los objetivos del juego (arriba a la izquierda) y solo dice el nombre y
+  si es nuevo: sin rareza, pool ni distancia (el marcador y el minimapa ya la dan). Altura ajustable en F1 > Avisos.
+- La colección (F2) también se abre durante el caso, en el mismo lugar y tamaño que F1, con una pestaña arriba por
+  cada parte del cuerpo como el selector del juego (Cabeza, Ropa, Muñeca, Linterna, Farol, Glowstick, Cara, Dedo,
+  Música) y su cuenta tenés/total. Los tuyos van en el orden en que los desbloqueaste.
+- La colección oculta los ítems sin modelo que el juego tampoco muestra (como "Rounded Circle 64px"), así que las
+  cuentas tenés/total coinciden con el selector del juego.
+- F9 fuera de un caso dice "No estás en un caso".
+- F1 y F2 abiertos durante el juego muestran el cursor y frenan el movimiento y la cámara (PlayerLook), como los
+  popups del juego.
+  Escape o la X los cierran.
+- Minimapa: el fondo oscuro cubre solo el laberinto; la entrada y la salida se dibujan por fuera.
+- Debajo del minimapa, quién falta agarrar el cosmético del caso; el marcador de cada jugador que falta lo dice también.
+- Minimapa: zonas seguras en verde semitransparente, y el mapa se agranda para incluir la zona fuera del laberinto
+  (inicio, salida) cuando estás ahí.
+- F1 se puede abrir dentro de una zona segura del caso. Barra grande arriba con cada tecla F y qué hace; el menú usa
+  toda la altura debajo de ella, con letra 50% más grande. El scroll de F1 ya no deja espacio vacío al final.
+
+### Quitado
+- F5 para levantarse: levantarse solo ya viene prendido y se maneja desde F1.
+- "Exclusivos posibles" del aviso de F9.
+- Marcadores y resumen de coleccionables (tickets, fichas de reroll, XP).
+
+### Compatibilidad (expansión egipcia del juego, 27/10)
+- Arreglado: los nombres de los otros jugadores (marcadores y F9) tiraban error en cada frame porque el juego movió el
+  cartel de nombre a otro componente.
+- Mapas Egipto A y B: nombre en el tablero y pools aprendidos al jugarlos (no vienen en el extracto embebido porque el
+  juego los carga desde el DLC).
+- Aviso de monstruos: nombres para Anubis, Mummy, Sand Zombie, Ouphris y Necreph.
+- Rareza nueva "DLC Egipto" con color propio. La colección (F2) oculta los cosméticos del DLC si no lo tenés, igual
+  que el menú del juego.
+
 ## [0.3.10] - 2026-10-15
 
 ### Jugabilidad

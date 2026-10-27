@@ -20,8 +20,6 @@ internal static class Settings
     public static MelonPreferences_Entry<float> SeasonalChance;
     public static MelonPreferences_Entry<bool> CaseBoardPrediction;
     public static MelonPreferences_Entry<string> MarkerMode;
-    public static MelonPreferences_Entry<bool> CollectibleMarkers;
-    public static MelonPreferences_Entry<int> CollectibleMaxMarkers;
     public static MelonPreferences_Entry<bool> PoolPreferNew;
     public static MelonPreferences_Entry<bool> CaseBoardPostIt;
     public static MelonPreferences_Entry<float> CaseBoardPostItSize;
@@ -34,6 +32,8 @@ internal static class Settings
     public static MelonPreferences_Entry<float> AutoGlowstickSeconds;
     public static MelonPreferences_Entry<bool> MinimapEnabled;
     public static MelonPreferences_Entry<float> MinimapSize;
+    public static MelonPreferences_Entry<float> HudTextTop;
+    public static MelonPreferences_Entry<bool> AutoFlashlight;
     public static MelonPreferences_Entry<bool> PoolAddAllSeasonal;
     public static MelonPreferences_Entry<bool> RandomCasesOnlyNew;
     public static MelonPreferences_Entry<bool> DistributeAcrossCases;
@@ -73,14 +73,10 @@ internal static class Settings
             description: "Probabilidad de que el cosmetico spawneado sea de temporada (0 a 1). -1 = la del juego.");
         CaseBoardPrediction = _cat.CreateEntry("CaseBoardPrediction", true,
             description: "Muestra en cada carpeta del tablero de casos que cosmetico va a salir. Aprende el pool de cada mapa al jugarlo.");
-        CollectibleMarkers = _cat.CreateEntry("CollectibleMarkers", true,
-            description: "Marca tickets, fichas de reroll y XP del caso junto con el cosmetico (F9 o Always) y los resume en el aviso de F9.");
-        CollectibleMaxMarkers = _cat.CreateEntry("CollectibleMaxMarkers", 15,
-            description: "Cuantos coleccionables marcar a la vez (los mas cercanos).");
         MarkerMode = _cat.CreateEntry("MarkerMode", "Hotkey",
             description: "Marcador sobre el cosmetico, visible a traves de paredes: Off, Hotkey (mientras F9 este activo), Always.");
         SelfReviveAlways = _cat.CreateEntry("SelfReviveAlways", true,
-            description: "Levantarse solo despues de que un monstruo te tire, sin el item ni ayuda (usa la auto-reanimacion del juego). Se cambia solo en Opciones LabyHelper (F1); estando caido, F5 te levanta.");
+            description: "Levantarse solo despues de que un monstruo te tire, sin el item ni ayuda (usa la auto-reanimacion del juego). Se cambia solo en Opciones LabyHelper (F1).");
         SprintSpeedMultiplier = _cat.CreateEntry("SprintSpeedMultiplier", 1.25f,
             description: "Velocidad al correr de tu jugador (x, 1 = la del juego). No afecta a los monstruos. Cada jugador necesita el mod para tenerla.");
         BoardOnlySealed = _cat.CreateEntry("BoardOnlySealed", true,
@@ -98,6 +94,10 @@ internal static class Settings
             description: "Minimapa fijo arriba a la derecha durante los casos. F4 lo muestra/oculta.");
         MinimapSize = _cat.CreateEntry("MinimapSize", 260f,
             description: "Lado del minimapa en pixeles (120 a 600).");
+        HudTextTop = _cat.CreateEntry("HudTextTopPct", 11f,
+            description: "Altura del texto de LabyHelper a la izquierda (aviso del cosmetico, F9), en % de la pantalla desde arriba. Mas abajo que las condiciones del caso del juego.");
+        AutoFlashlight = _cat.CreateEntry("AutoFlashlight", true,
+            description: "Al empezar el caso pone la linterna en la mano derecha (encendida), si el caso la tiene.");
         CaseBoardPostIt = _cat.CreateEntry("CaseBoardPostIt", true,
             description: "Post-it con la imagen del exclusivo mas probable que no tenes, debajo del texto de cada carpeta.");
         CaseBoardPostItSize = _cat.CreateEntry("CaseBoardPostItSize", 3f,
@@ -107,7 +107,7 @@ internal static class Settings
         PoolAddAllSeasonal = _cat.CreateEntry("PoolAddAllSeasonal", true,
             description: "Como host: suma al pool del mapa los cosmeticos de todos los eventos de temporada (no aplica a Hardcore).");
         RandomCasesOnlyNew = _cat.CreateEntry("RandomCasesOnlyNew", true,
-            description: "Como host: en los casos random del tablero siempre sale un cosmetico y solo uno que le falte a alguien del grupo. Los casos custom quedan como el juego. Solo se apaga desde Opciones LabyHelper (F1).");
+            description: "Como host: en los casos random (del tablero y custom) siempre sale un cosmetico y solo uno que le falte a alguien del grupo. Solo se apaga desde Opciones LabyHelper (F1).");
         DistributeAcrossCases = _cat.CreateEntry("DistributeAcrossCases", true,
             description: "Reparte los cosmeticos faltantes entre las carpetas random del tablero: cada uno puede salir en una sola.");
         MapVarietyEnabled = _cat.CreateEntry("MapVarietyEnabled", true,

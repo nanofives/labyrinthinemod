@@ -33,6 +33,7 @@
     <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.UI.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.UIModule.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.Addressables.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Il2CppACTk.Runtime.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.ResourceManager.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Assembly-CSharp.dll" Private="false" />
   </ItemGroup>

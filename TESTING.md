@@ -96,10 +96,22 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] Al agarrarlo y terminar el caso queda desbloqueado el ítem nuevo (no el del portador).
 - [ ] En grupo: todos ven el mismo cosmético; el log de cada uno muestra el mismo `party needed hash`.
 
-## Coleccionables
-- [ ] F9 en un caso: marcadores "● Tickets x5 23 m", "● Ficha de reroll", "● XP" sobre los más cercanos.
-- [ ] El aviso de F9 suma la línea "Coleccionables: Tickets N · ...".
-- [ ] Al agarrar uno, su marcador desaparece en ~2 s.
+## Pedidos del 27/10
+- [ ] F1: el scroll termina justo después de la última opción, sin espacio vacío.
+- [ ] Caso custom (elegís el mapa) como host, todos con el mod: siempre sale un cosmético y es uno que le falta a alguien.
+- [ ] Al empezar un caso con linterna: queda en la mano derecha y prendida (log `AutoFlashlight: ...`). F1 > Partida la apaga.
+- [ ] Monstruo persiguiendo: cartel rojo que parpadea sobre una franja roja oscura.
+- [ ] Objetivos: el log muestra `Objectives: N objective object(s) in the scene` con N > 0, y aparecen en el minimapa
+      (magenta) aunque estén lejos. Anotá el mapa si sigue en 0.
+- [ ] El texto de la izquierda (aviso del cosmético, F9) arranca más abajo y no tapa las condiciones del caso.
+      F1 > Avisos > Altura lo ajusta.
+- [ ] F9 ya no lista "Exclusivos posibles" ni coleccionables, y no hay marcadores de tickets/XP.
+- [ ] F1 dentro de una zona segura del caso abre el menú; al salir de la zona se cierra. Fuera de zona segura no abre.
+- [ ] Barra arriba con F1, F2, F4, F5, F6, F7/F8, F9 y qué hace cada una (verde si está prendida) en el lobby, en zona
+      segura y con F1 abierto. En el caso no tapa el minimapa. El menú F1 queda debajo de la barra, sin pisarse.
+- [ ] En grupo: debajo del minimapa "Falta agarrar el cosmético: ..." y en el marcador del jugador "◆ falta el cosmético".
+- [ ] Minimapa: zonas seguras en verde claro; al estar en la zona de inicio (fuera de la grilla) el mapa se agranda con
+      un borde marrón y la flecha queda dentro del recuadro.
 
 ## Grupo (todos con el mod)
 - [ ] Log `Party: published N owned items to the lobby.` y `Party: Vos N owned, Amigo M owned -> K needed.`

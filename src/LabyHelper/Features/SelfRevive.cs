@@ -15,8 +15,7 @@ namespace LabyHelper.Features;
 ///  - Death.HandleSelfReviveInput, once the hold bar fills, calls RndPlayerInventory.RemoveItem(item) and only
 ///    sends CmdReviveSelf if that succeeded. The server-side CmdReviveSelf does no item check.
 /// We keep the availability on and let RemoveItem "succeed" without consuming anything while that input runs.
-/// F5 while downed sends CmdReviveSelf directly, in case the prompt doesn't show. On/off only from F1 (by request).
-/// Changes gameplay, so it is off by default (Settings.SelfReviveAlways).
+/// On by default; on/off only from F1 (by request). No hotkey.
 /// </summary>
 internal static class SelfRevive
 {
@@ -57,8 +56,6 @@ internal static class SelfRevive
 
     public static void Update()
     {
-        if (GameState.InCase && Input.GetKeyDown(KeyCode.F5)) ReviveNow();
-
         if (Time.unscaledTime < _nextCheck) return;
         _nextCheck = Time.unscaledTime + 1f;
         var death = LocalDeath();
@@ -81,20 +78,6 @@ internal static class SelfRevive
         {
             Core.Log.Warning($"SelfRevive: {e.Message}");
         }
-    }
-
-    /// <summary>F5 in a case while downed: get up right away. The feature itself is only switched in F1.</summary>
-    private static void ReviveNow()
-    {
-        if (!Settings.SelfReviveAlways.Value) return;
-        var death = LocalDeath();
-        if (death == null || !IsDowned(death)) return;
-        try
-        {
-            death.CmdReviveSelf();
-            Toast.Show(Loc.T("Te levantaste solo.", "You got back up."), 2.5f);
-        }
-        catch (Exception e) { Core.Log.Warning($"SelfRevive: {e.Message}"); }
     }
 
     private static bool IsDowned(Death death)

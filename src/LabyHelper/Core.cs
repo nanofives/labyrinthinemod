@@ -33,7 +33,7 @@ public class Core : MelonMod
 #if EXPERIMENTS
         ForeignPieces.Apply(HarmonyInstance);
 #endif
-        Log.Msg("Loaded. F6 brillo on/off, F7/F8 exposicion -/+, Shift+F7/F8 gamma -/+, F9 cosmetico del caso, F5 levantarse (caido), F2 coleccion, F4 minimapa, F1 opciones.");
+        Log.Msg("Loaded. F6 brillo on/off, F7/F8 exposicion -/+, Shift+F7/F8 gamma -/+, F9 cosmetico del caso, F2 coleccion, F4 minimapa, F1 opciones.");
     }
 
     public override void OnUpdate()
@@ -43,6 +43,7 @@ public class Core : MelonMod
         Pigman.Update();
         MonsterAlert.Update();
         AutoGlowstick.Update();
+        AutoFlashlight.Update();
         Objectives.Update();
         Minimap.Update();
         SelfRevive.Update();
@@ -52,7 +53,6 @@ public class Core : MelonMod
 #if EXPERIMENTS
         ForeignPieces.Update();
 #endif
-        Collectibles.Update();
         ModelIcons.Update();
         CollectionViewer.Update();
         OptionsMenu.Update();
@@ -76,9 +76,11 @@ public class Core : MelonMod
         Pigman.OnSceneLoaded();
         MonsterAlert.OnSceneLoaded();
         AutoGlowstick.OnSceneLoaded();
+        AutoFlashlight.OnSceneLoaded();
         Objectives.OnSceneLoaded();
         Minimap.OnSceneLoaded();
-        Collectibles.OnSceneLoaded();
+        OptionsMenu.OnSceneLoaded();
+        CollectionViewer.OnSceneLoaded();
         _learnAt.Clear();
         foreach (var delay in new[] { 5f, 15f, 40f }) _learnAt.Add(Time.unscaledTime + delay);
     }

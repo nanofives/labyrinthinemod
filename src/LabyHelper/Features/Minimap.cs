@@ -17,6 +17,8 @@ namespace LabyHelper.Features;
 /// from MazeGenerator.GridToWorldPos, sampled at three points so any offset or rotation is handled. Shows you (arrow),
 /// the other players, the monsters (MonsterNetworkSync, synced to every peer; orange, red while chasing), the cosmetic
 /// still on the ground, the exit and the case objectives (Objectives). F4 shows/hides it.
+/// Safe zones (LightZone triggers) are drawn semi-transparent green on top, and the view grows past the maze edge to cover the start area and wherever the players walk outside the grid. Under it, who still has to pick up
+/// the case cosmetic.
 /// </summary>
 internal static class Minimap
 {
@@ -83,6 +85,7 @@ internal static class Minimap
         }
         if (!Settings.MinimapEnabled.Value || !GameState.InCase) return;
         if (Time.unscaledTime >= _nextMonsters) RefreshMonsters();
+        if (_mapPtr != IntPtr.Zero && Time.unscaledTime >= _nextSafe) RefreshSafeZones();
         if (Time.unscaledTime < _nextCheck) return;
         _nextCheck = Time.unscaledTime + 1f;
         try { Build(); }
@@ -126,6 +129,10 @@ internal static class Minimap
         _sizeX = sx;
         _sizeY = sy;
         _mapPtr = map.Pointer;
+        _view = new Rect(0, 0, sx, sy);
+        SafeZoneById.Clear();
+        SafeZones.Clear();
+        _nextSafe = 0f;
         Core.Log.Msg($"Minimap: maze {sx}x{sy}, grid x -> {_ax}, grid y -> {_ay}, origin {_origin}, exit {(_end.x >= 0 ? _end.ToString() : "none")}.");
     }
 
@@ -152,17 +159,33 @@ internal static class Minimap
     public static void Draw()
     {
         if (!Settings.MinimapEnabled.Value || !GameState.InCase || _tex == null || _mapPtr == IntPtr.Zero) return;
+        Grow();
         float size = Mathf.Clamp(Settings.MinimapSize.Value, 120f, 600f);
-        float scale = size / Mathf.Max(_sizeX, _sizeY);
-        float w = _sizeX * scale, h = _sizeY * scale;
-        var r = new Rect(Screen.width - w - 16, 16, w, h);
+        float viewW = _view.width, viewH = _view.height;
+        float scale = size / Mathf.Max(viewW, viewH);
+        var v = new Rect(Screen.width - viewW * scale - 16, 16, viewW * scale, viewH * scale); // whole view
+        // The maze grid inside the view (grid cell x covers [x, x+1)).
+        var r = new Rect(v.x - _view.xMin * scale, v.yMax - (_sizeY - _view.yMin) * scale, _sizeX * scale, _sizeY * scale);
 
-        Ui.Panel(new Rect(r.x - 4, r.y - 4, w + 8, h + 8));
+        // Dark backing only behind the maze grid; entrance/exit areas outside it stay over the game view.
+        Ui.Panel(new Rect(r.x - 4, r.y - 4, r.width + 8, r.height + 8));
         GUI.DrawTexture(r, _tex, ScaleMode.StretchToFill, true);
         _style ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
 
         // Grid y grows north; screen y grows down.
         Vector2 ToScreen(Vector2 g) => new(r.x + (g.x + 0.5f) * scale, r.yMax - (g.y + 0.5f) * scale);
+
+        // Safe zones (LightZone triggers: light, fire, interiors, spider tunnels), from their collider bounds.
+        _safe ??= Solid(new Color(0.3f, 0.95f, 0.45f, 0.22f)); // semi-transparent: the maze shows through
+        foreach (var b in SafeZones)
+        {
+            var a = ToScreen(ToGrid(b.min));
+            var c = ToScreen(ToGrid(b.max));
+            var zr = Rect.MinMaxRect(Mathf.Min(a.x, c.x), Mathf.Min(a.y, c.y), Mathf.Max(a.x, c.x), Mathf.Max(a.y, c.y));
+            if (zr.width < 3f) zr = new Rect(zr.center.x - 1.5f, zr.y, 3f, zr.height);
+            if (zr.height < 3f) zr = new Rect(zr.x, zr.center.y - 1.5f, zr.width, 3f);
+            GUI.DrawTexture(zr, _safe);
+        }
 
         if (_end.x >= 0) Dot(ToScreen(_end), Mathf.Max(6f, scale * 1.5f), new Color(1f, 0.3f, 0.25f), "S");
         foreach (var (pos, _, _) in CosmeticAlert.PendingTargets())
@@ -187,6 +210,100 @@ internal static class Minimap
             GUIUtility.RotateAroundPivot(angle, me);
             GUI.DrawTexture(new Rect(me.x - a / 2, me.y - a / 2, a, a), _arrow, ScaleMode.StretchToFill, true);
             GUI.matrix = saved;
+        }
+
+        // Who still has to pick up the case cosmetic, under the map (party members with the mod).
+        var missing = CosmeticAlert.StillToPickUp();
+        if (missing.Count > 0)
+        {
+            _note ??= new GUIStyle(GUI.skin.label) { fontSize = 15, fontStyle = FontStyle.Bold, alignment = TextAnchor.UpperRight, wordWrap = true };
+            string names = string.Join(", ", missing.Select(m => m.IsMe ? Loc.T("vos", "you") : m.Name));
+            string text = Loc.T($"◆ Falta agarrar el cosmético: {names}", $"◆ Cosmetic not picked up yet: {names}");
+            var tr = new Rect(Screen.width - 16 - Mathf.Max(v.width, 320f), v.yMax + 8, Mathf.Max(v.width, 320f), 44);
+            GUI.color = Color.black;
+            GUI.Label(new Rect(tr.x + 1, tr.y + 1, tr.width, tr.height), text, _note);
+            GUI.color = new Color(0.35f, 0.69f, 1f);
+            GUI.Label(tr, text, _note);
+            GUI.color = Color.white;
+        }
+    }
+
+    private static GUIStyle _note;
+    private static Texture2D _safe;
+    private static Rect _view; // grid-space area shown: the maze plus whatever around it the players have walked
+    private static readonly List<Bounds> SafeZones = new();
+    private static readonly Dictionary<IntPtr, Bounds> SafeZoneById = new();
+    private static float _nextSafe;
+    private const float MaxOutside = 12f; // tiles beyond the maze the view may grow
+
+    private static Texture2D Solid(Color c)
+    {
+        var t = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
+        t.SetPixel(0, 0, c);
+        t.Apply();
+        return t;
+    }
+
+    /// <summary>
+    /// Grows the view (never shrinks it, so the map doesn't jump) to keep the safe zones, you and the other players in
+    /// sight, with a tile of margin, up to MaxOutside tiles beyond the maze on each side.
+    /// </summary>
+    private static void Grow()
+    {
+        var pts = new List<Vector2>();
+        foreach (var b in SafeZones) { pts.Add(ToGrid(b.min)); pts.Add(ToGrid(b.max)); }
+        var cam = Camera.main;
+        if (cam != null) pts.Add(ToGrid(cam.transform.position));
+        foreach (var p in Players.Others()) pts.Add(ToGrid(p.Pos));
+        float x0 = _view.xMin, y0 = _view.yMin, x1 = _view.xMax, y1 = _view.yMax;
+        foreach (var g in pts)
+        {
+            if (g.x < -1e4f) continue; // ToGrid failed
+            // Grid coordinates are cell centres: cell x covers [x - 0.5, x + 0.5], drawn at [x, x + 1) in view units.
+            x0 = Mathf.Min(x0, Mathf.Max(-MaxOutside, Mathf.Floor(g.x + 0.5f) - 1f));
+            y0 = Mathf.Min(y0, Mathf.Max(-MaxOutside, Mathf.Floor(g.y + 0.5f) - 1f));
+            x1 = Mathf.Max(x1, Mathf.Min(_sizeX + MaxOutside, Mathf.Ceil(g.x + 0.5f) + 1f));
+            y1 = Mathf.Max(y1, Mathf.Min(_sizeY + MaxOutside, Mathf.Ceil(g.y + 0.5f) + 1f));
+        }
+        _view = Rect.MinMaxRect(x0, y0, x1, y1);
+    }
+
+    /// <summary>Safe zones of the current maze: every LightZone with a safezone type, as world bounds of its trigger.</summary>
+    private static void RefreshSafeZones()
+    {
+        _nextSafe = Time.unscaledTime + 5f; // maze modules keep spawning for a while after the scene loads
+        try
+        {
+            foreach (var z in UnityEngine.Object.FindObjectsOfType<Il2Cpp.LightZone>(true))
+            {
+                if (z == null || !z.gameObject.scene.IsValid() || (int)z.safezoneType == 0) continue;
+                foreach (var col in z.GetComponents<Collider>())
+                {
+                    // Collider.bounds is empty while the object is off (occlusion), so boxes are computed by hand.
+                    Bounds? b = null;
+                    var box = col?.TryCast<BoxCollider>();
+                    if (box != null)
+                    {
+                        var t = box.transform;
+                        var bb = new Bounds(t.TransformPoint(box.center), Vector3.zero);
+                        for (int i = 0; i < 8; i++)
+                        {
+                            var corner = box.center + Vector3.Scale(box.size * 0.5f, new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+                            bb.Encapsulate(t.TransformPoint(corner));
+                        }
+                        b = bb;
+                    }
+                    else if (col != null && col.bounds.extents.sqrMagnitude > 0.01f) b = col.bounds;
+                    if (b != null) SafeZoneById[col.Pointer] = b.Value;
+                }
+            }
+            SafeZones.Clear();
+            SafeZones.AddRange(SafeZoneById.Values);
+        }
+        catch (Exception e)
+        {
+            Core.Log.Warning($"Minimap: safe zones: {e.Message}");
+            _nextSafe = Time.unscaledTime + 30f;
         }
     }
 

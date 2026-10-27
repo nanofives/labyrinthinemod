@@ -1,6 +1,7 @@
 # Labyrinthine: hallazgos de ingeniería inversa
 
 Fecha del análisis: 2026-10-08. Build analizado: GameAssembly.dll del 28/06 (build-guid 260dab8d430140acbe9661b9620d263f).
+Dump regenerado el 2026-10-27 tras la expansión egipcia (ver la última sección).
 
 ## Stack
 
@@ -88,3 +89,15 @@ Fecha del análisis: 2026-10-08. Build analizado: GameAssembly.dll del 28/06 (bu
   + `HandleObjectReplacement` del hijo 0. 472 de 504 pickups tienen `loadObjectModel` (re/scripts/inspect_pickups.py).
   Cambiar `itemID` en un prefix de `Start` cambia modelo, registro y desbloqueo.
 - `CustomizationManager.CmdSetCustomization` solo serializa los ítems aplicados (equipados), no los desbloqueados.
+
+## Update expansión egipcia (2026-10-27)
+- Diff de dump contra el build del 28/06: `MazeType.DLC_Egypt_A/B` (19/20), `ItemRarity.DLC_Egyptian` (6),
+  `MonsterType.DLC_Egyptian_*` (36-40), puzzles `RndPillarsPuzzleController`/`RndWeightPuzzleController`.
+- `PlayerNetworkSync.namePlate` pasó a `nameplateController` (`PlayerNameplateController.namePlate`).
+- `DLCManager` (estático): cosméticos del DLC egipcio = ids 437-451; `IsCosmeticPartOfDLC` + `IsDLCAvailable` es el
+  filtro que usa `CustomizationUIController.IsItemValidToShowOnUIList`. Escenas `DLC_Egypt_A/B` no están en el build
+  (no hay levelN): `extract_pools.py` no las puede leer, `PoolCache` las aprende en partida.
+- Sin cambios: `GetSeed` (+0x120/+0x124), `Spawn` (0x12B5, 0x23E3, 0x692, 50 intentos), reintentos de `CreateMaze`
+  (+0x4A3/+0x18C1, hasta 10), `SpawnCustomizationItems`. `MazeGenerator.MixSeed` es nuevo y solo lo usa el puzzle de pilares.
+- `MazeTypesConfigSO` suma `DLC_Egyptian_mazeTypes` y `DLC_Alien_mazeTypes` (otro DLC en camino) con
+  `HandleDLCMapsSelectionLogic` en la elección de mapas del tablero.
