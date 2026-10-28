@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.16] - 2026-10-28
+
 ### Jugabilidad
 - Los casos random también pueden dar los cosméticos que no salen de ningún caso (tienda, recompensas por nivel,
   limitados), con el mismo truco que ya traía ítems de otros mapas. No incluye la música (no tiene modelo en el piso)
