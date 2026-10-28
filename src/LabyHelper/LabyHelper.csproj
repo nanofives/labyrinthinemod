@@ -34,6 +34,8 @@
     <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.UIModule.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.Addressables.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Il2CppACTk.Runtime.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Il2CppBehaviorDesigner.Runtime.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\Il2CppBehaviorDesigner.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.ResourceManager.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Assembly-CSharp.dll" Private="false" />
   </ItemGroup>
@@ -49,6 +51,9 @@
   <!-- Map pools extracted offline from the game files (re/scripts/extract_pools.py). -->
   <ItemGroup>
     <EmbeddedResource Include="pools.default.json" LogicalName="pools.default.json" Condition="Exists('pools.default.json')" />
+    <!-- The updater plugin rides inside the mod so the mod can replace an outdated one (UpdaterRepair.cs). -->
+    <ProjectReference Include="..\Updater\LabyHelper.Updater.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <EmbeddedResource Include="..\Updater\bin\$(Configuration)\net6.0\LabyHelper.Updater.dll" LogicalName="LabyHelper.Updater.dll" />
   </ItemGroup>
 
   <!-- MelonInfo needs a compile-time constant: generate BuildInfo from the shared version. -->

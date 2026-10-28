@@ -17,6 +17,7 @@ public class Core : MelonMod
         Settings.Init();
         AnnounceUpdate();
         UpdateInfo.Init();
+        UpdaterRepair.Run();
         PoolCache.Load();
         CheatDetector.Apply(HarmonyInstance);
         Brightness.Apply(HarmonyInstance);

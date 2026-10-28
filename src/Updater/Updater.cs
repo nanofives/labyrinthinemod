@@ -41,9 +41,12 @@ public class Updater : MelonPlugin
         if (!File.Exists(target)) return; // mod not installed: nothing to update
         Version installed = AssemblyName.GetAssemblyName(target).Version;
 
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(6) };
+        // One client, its timeout fixed before the first request (changing it afterwards throws, which made every
+        // update before 0.3.13 fail). The quick version check gets its own shorter deadline.
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
         http.DefaultRequestHeaders.UserAgent.ParseAdd("LabyHelper-Updater");
-        using var doc = JsonDocument.Parse(http.GetStringAsync(Api).GetAwaiter().GetResult());
+        using var quick = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(6));
+        using var doc = JsonDocument.Parse(http.GetStringAsync(Api, quick.Token).GetAwaiter().GetResult());
         var root = doc.RootElement;
         string tag = root.GetProperty("tag_name").GetString() ?? "";
         if (!Version.TryParse(tag.TrimStart('v', 'V'), out var latest)) return;
@@ -63,7 +66,6 @@ public class Updater : MelonPlugin
         }
 
         string temp = target + ".download";
-        http.Timeout = TimeSpan.FromSeconds(30);
         File.WriteAllBytes(temp, http.GetByteArrayAsync(url).GetAwaiter().GetResult());
         Version downloaded = AssemblyName.GetAssemblyName(temp).Version; // throws if it isn't a valid .NET assembly
         if (Normalize(downloaded) != Normalize(latest))

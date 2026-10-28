@@ -42,6 +42,11 @@ internal static class MonsterAlert
             if (me == null || me.isDead) return;
             Vector3 mine = me.transform.position;
 
+            // Real targets: computed here when we're the host, read from the host's lobby data otherwise. Null when the
+            // host doesn't have the mod: then the old guess (closest living player) is the only option.
+            bool host = me.isServer;
+            var targets = host ? new Dictionary<uint, uint>() : Party.ReadChase();
+
             var chasing = new List<string>();
             foreach (var sync in UnityEngine.Object.FindObjectsOfType<MonsterNetworkSync>())
             {
@@ -49,23 +54,45 @@ internal static class MonsterAlert
                 var state = sync.CurrentAnimationState;
                 bool charging = state == AnimState.MonsterCharge;
                 if (!(sync.IsChasingPlayer || charging || state == AnimState.MonsterRun || state == AnimState.MonsterSpot)) continue;
-                if (!ChasingMe(sync.transform.position, mine, others)) continue;
+                if (host && TargetOf(sync) is uint t) targets[sync.netId] = t;
+                bool mineChase = targets != null
+                    ? targets.TryGetValue(sync.netId, out var target) && target == me.netId
+                    : ChasingMe(sync.transform.position, mine, others);
+                if (!mineChase) continue;
                 string name = NameOf(sync);
                 chasing.Add(charging ? Loc.T($"{name} (cargando)", $"{name} (charging)") : name);
             }
+            if (host) Party.PublishChase(targets.Count == 0 ? "-" : string.Join(",", targets.Select(kv => $"{kv.Key}:{kv.Value}")));
             if (chasing.Count == 0) return;
 
             var list = chasing.GroupBy(n => n).Select(g => g.Count() > 1 ? $"{g.Count()}x {g.Key}" : g.Key).ToList();
             string who = string.Join(", ", list);
             bool plural = chasing.Count > 1;
-            Toast.Show(plural ? Loc.T($"Te persiguen: {who}", $"Chasing: {who}")
-                              : Loc.T($"{who} te persigue", $"{who} is chasing"), Every + 0.4f, Toast.Slot.Alert);
+            Toast.Show(plural ? Loc.T($"Te persiguen A VOS: {who}", $"Chasing YOU: {who}")
+                              : Loc.T($"{who} te persigue A VOS", $"{who} is chasing YOU"), Every + 0.4f, Toast.Slot.Alert);
         }
         catch (Exception e)
         {
             Core.Log.Warning($"MonsterAlert: {e.Message}");
             _next = Time.unscaledTime + 10f;
         }
+    }
+
+    /// <summary>
+    /// Host only: netId of the player this monster's AI is after (AIController.Target, a BehaviorDesigner
+    /// SharedGameObject holding the player's object), or null if it has none.
+    /// </summary>
+    private static uint? TargetOf(MonsterNetworkSync sync)
+    {
+        try
+        {
+            var ai = sync.GetComponent<AIController>() ?? sync.transform.root.GetComponentInChildren<AIController>(true);
+            var go = ai?.Target?.Value;
+            if (go == null) return null;
+            var player = go.GetComponentInParent<Il2Cpp.PlayerNetworkSync>() ?? go.transform.root.GetComponentInChildren<Il2Cpp.PlayerNetworkSync>();
+            return player != null ? player.netId : null;
+        }
+        catch { return null; }
     }
 
     /// <summary>True when no other living player is clearly closer to the monster than we are.</summary>

@@ -5,6 +5,17 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Arreglado
+- La actualización automática fallaba siempre que había una versión nueva (el actualizador cambiaba el tiempo de
+  espera de su conexión después de usarla). Por eso nadie pasó de la versión que instaló. Hay que instalar esta versión
+  una vez a mano; desde ahí el mod también reemplaza un actualizador viejo por el que trae adentro.
+- "Falta agarrar el cosmético" omitía a jugadores con el mod que todavía no lo habían agarrado (los tomaba como sin
+  datos). Ahora un jugador con el mod figura hasta que avisa que lo agarró en este caso.
+
+### Información (no cambia la jugabilidad)
+- El cartel de monstruo solo aparece si te persigue a vos, y lo dice ("te persigue A VOS"). El host publica a quién
+  persigue cada monstruo (solo él lo sabe); si el host no tiene el mod, queda la estimación por distancia de antes.
+
 ## [0.3.12] - 2026-10-27
 
 ### Arreglado

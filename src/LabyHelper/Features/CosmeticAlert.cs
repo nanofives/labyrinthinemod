@@ -117,8 +117,8 @@ internal static class CosmeticAlert
             foreach (var m in Party.Members)
             {
                 if (m.IsMe) { (PickedUp.Contains(id) ? have : missing).Add(Loc.T("vos", "you")); continue; }
-                if (!Party.PickedBy.TryGetValue(m.SteamId, out var p) || p.seed != seed) unknown.Add(m.Name);
-                else (p.ids.Contains(id) ? have : missing).Add(m.Name);
+                if (!m.HasData) unknown.Add(m.Name); // no mod: we can't know
+                else (PickedThisCase(m, seed, id) ? have : missing).Add(m.Name);
             }
             var parts = new List<string>();
             if (have.Count > 0) parts.Add(Loc.T("lo agarraron: ", "picked up by: ") + string.Join(", ", have));
@@ -146,14 +146,21 @@ internal static class CosmeticAlert
             foreach (var m in Party.Members)
             {
                 if (m.IsMe) { if (ids.Any(id => !PickedUp.Contains(id))) missing.Add(m); continue; }
-                if (Party.PickedBy.TryGetValue(m.SteamId, out var p) && p.seed == seed && ids.Any(id => !p.ids.Contains(id)))
-                    missing.Add(m);
+                if (m.HasData && ids.Any(id => !PickedThisCase(m, seed, id))) missing.Add(m);
             }
         }
         return _missing = missing;
     }
 
     private static List<Party.Member> _missing = new();
+
+    /// <summary>
+    /// A modded player picked this item up in this case only if they said so for this case's seed. Anything else
+    /// (nothing published yet, or the "nothing picked" published at scene load before the contract was set, with
+    /// another seed) means they still have to pick it up.
+    /// </summary>
+    private static bool PickedThisCase(Party.Member m, int seed, ushort id)
+        => Party.PickedBy.TryGetValue(m.SteamId, out var p) && p.seed == seed && p.ids.Contains(id);
     private static float _nextMissing;
 
     private static void ContractFinishedPostfix()

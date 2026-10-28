@@ -230,6 +230,48 @@ internal static class Party
         PickedBy[id.m_SteamID] = (seed, ids);
     }
 
+    private const string ChaseKey = "lh_chase";
+    private static string _lastChase;
+
+    /// <summary>
+    /// Host only: who each chasing monster is after, "monsterNetId:playerNetId,..." in lobby member data "lh_chase"
+    /// ("-" when nobody is chased, so "empty" still means "host without the mod"). The chase target lives only in the
+    /// host's behaviour tree (AIController.Target); Mirror never sends it to the clients. Written only on change.
+    /// </summary>
+    public static void PublishChase(string value)
+    {
+        if (value == _lastChase) return;
+        try
+        {
+            var lobby = Lobby();
+            if (lobby == null) return;
+            SteamMatchmaking.SetLobbyMemberData(lobby.Value, ChaseKey, value);
+            _lastChase = value;
+        }
+        catch (Exception e) { Core.Log.Warning($"Party: publish chase failed: {e.Message}"); }
+    }
+
+    /// <summary>The host's chase targets (monster netId -> player netId), or null if the host doesn't publish them.</summary>
+    public static Dictionary<uint, uint> ReadChase()
+    {
+        try
+        {
+            var lobby = Lobby();
+            if (lobby == null) return null;
+            var owner = SteamMatchmaking.GetLobbyOwner(lobby.Value);
+            string value = SteamMatchmaking.GetLobbyMemberData(lobby.Value, owner, ChaseKey);
+            if (string.IsNullOrEmpty(value)) return null;
+            var map = new Dictionary<uint, uint>();
+            foreach (var pair in value.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var kv = pair.Split(':');
+                if (kv.Length == 2 && uint.TryParse(kv[0], out var m) && uint.TryParse(kv[1], out var p)) map[m] = p;
+            }
+            return map;
+        }
+        catch { return null; }
+    }
+
     /// <summary>Tells the lobby what we picked up in this case (called at case start with nothing, and on pickup).</summary>
     public static void PublishPicked(int seed, IEnumerable<ushort> ids)
     {
