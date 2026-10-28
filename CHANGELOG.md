@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.15] - 2026-10-27
+
 ### Arreglado
 - Mismo cosmético para todos: ahora lo elige el host y lo publica en el lobby; los demás usan esa elección. Antes cada
   uno lo calculaba con sus propios datos (pools aprendidos en sus partidas, datos del grupo llegando en otro momento) y
