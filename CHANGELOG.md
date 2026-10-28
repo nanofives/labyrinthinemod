@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.18] - 2026-10-28
+
 ### Interfaz
 - El panel de opciones (F1), la colección (F2) y la barra de teclas usan el estilo del juego: su fuente (Larke Sans),
   sus paneles de borde irregular y los trazos de pincel blancos que se llenan al pasar el mouse, como en el menú
