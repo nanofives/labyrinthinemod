@@ -26,6 +26,7 @@
     <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.RenderPipelines.HighDefinition.Runtime.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.AudioModule.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.AIModule.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Il2CppMirror.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Il2Cppcom.rlabrecque.steamworks.net.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Il2CppFizzySteamworks.dll" Private="false" />

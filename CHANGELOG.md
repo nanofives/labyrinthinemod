@@ -5,6 +5,16 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Jugabilidad
+- Las reglas del mod (cosmético nuevo, reparto, variedad) se apagan para todos si alguien del lobby tiene otra versión
+  de LabyHelper, con el aviso de quién. Antes cada versión elegía su propio cosmético y en un mismo caso a cada uno le
+  salía uno distinto.
+
+### Información (no cambia la jugabilidad)
+- Minimapa con niveles: en mapas con sótanos o pisos (las criptas debajo de Crypts) muestra el piso en el que estás,
+  con su nombre abajo a la izquierda, marca las bajadas (▼) y subidas (▲), y deja tenue lo que está en otro piso.
+  Los pisos salen de la malla de navegación del juego.
+
 ## [0.3.13] - 2026-10-27
 
 ### Arreglado

@@ -138,6 +138,19 @@ internal static class Party
                 if (!pending) SteamMatchmaking.SetLobbyMemberData(lobby.Value, key, $"{mine};on=0;why={why}");
                 return false;
             }
+            // Same rules but another mod version still picks differently (each peer spawns its own cosmetic, with its
+            // own code): everyone must run the host's version, or the rules go off for all.
+            foreach (var id in present)
+            {
+                if (id == me) continue;
+                var cid = new CSteamID(id);
+                string theirs = SteamMatchmaking.GetLobbyMemberData(lobby.Value, cid, VersionKey);
+                if (theirs == BuildInfo.Version) continue;
+                string name = Clean(SteamFriends.GetFriendPersonaName(cid));
+                why = $"{name} tiene LabyHelper {(string.IsNullOrEmpty(theirs) ? "viejo" : Clean(theirs))} y vos {BuildInfo.Version}";
+                SteamMatchmaking.SetLobbyMemberData(lobby.Value, key, $"{mine};on=0;why={why}");
+                return false;
+            }
             value = mine;
             SteamMatchmaking.SetLobbyMemberData(lobby.Value, key, $"{mine};on=1");
             return true;

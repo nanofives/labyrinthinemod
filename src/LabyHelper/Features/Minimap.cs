@@ -86,6 +86,13 @@ internal static class Minimap
         if (!Settings.MinimapEnabled.Value || !GameState.InCase) return;
         if (Time.unscaledTime >= _nextMonsters) RefreshMonsters();
         if (_mapPtr != IntPtr.Zero && Time.unscaledTime >= _nextSafe) RefreshSafeZones();
+        if (_mapPtr != IntPtr.Zero && _levelChecks.Count > 0 && Time.unscaledTime >= _levelChecks[0])
+        {
+            // The NavMesh can finish building a while after the maze: look again a few times.
+            _levelChecks.RemoveAt(0);
+            try { MinimapLevels.Analyze(ToGrid, _origin.y); }
+            catch (Exception e) { Core.Log.Warning($"Minimap: floors: {e.Message}"); }
+        }
         if (Time.unscaledTime < _nextCheck) return;
         _nextCheck = Time.unscaledTime + 1f;
         try { Build(); }
@@ -130,6 +137,9 @@ internal static class Minimap
         _sizeY = sy;
         _mapPtr = map.Pointer;
         _view = new Rect(0, 0, sx, sy);
+        MinimapLevels.Clear();
+        _levelChecks.Clear();
+        foreach (var d in new[] { 2f, 8f, 20f, 45f }) _levelChecks.Add(Time.unscaledTime + d);
         SafeZoneById.Clear();
         SafeZones.Clear();
         _nextSafe = 0f;
@@ -167,13 +177,34 @@ internal static class Minimap
         // The maze grid inside the view (grid cell x covers [x, x+1)).
         var r = new Rect(v.x - _view.xMin * scale, v.yMax - (_sizeY - _view.yMin) * scale, _sizeX * scale, _sizeY * scale);
 
-        // Dark backing only behind the maze grid; entrance/exit areas outside it stay over the game view.
-        Ui.Panel(new Rect(r.x - 4, r.y - 4, r.width + 8, r.height + 8));
-        GUI.DrawTexture(r, _tex, ScaleMode.StretchToFill, true);
-        _style ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-
         // Grid y grows north; screen y grows down.
         Vector2 ToScreen(Vector2 g) => new(r.x + (g.x + 0.5f) * scale, r.yMax - (g.y + 0.5f) * scale);
+        Rect CellRect(Rect g) => Rect.MinMaxRect(r.x + g.xMin * scale, r.yMax - g.yMax * scale, r.x + g.xMax * scale, r.yMax - g.yMin * scale);
+
+        // Floor you're on (by your feet); on another floor than the maze's, that floor's picture replaces the grid.
+        var cam0 = Camera.main;
+        int floor = cam0 != null && MinimapLevels.Levels.Count > 1 ? MinimapLevels.LevelOf(cam0.transform.position.y - 1.6f) : -1;
+        var level = floor >= 0 && floor != MinimapLevels.Main ? MinimapLevels.Levels[floor] : null;
+
+        // Dark backing only behind the maze grid; entrance/exit areas outside it stay over the game view.
+        Ui.Panel(new Rect(r.x - 4, r.y - 4, r.width + 8, r.height + 8));
+        if (level?.Tex != null)
+        {
+            GUI.color = new Color(1f, 1f, 1f, 0.15f); // the maze above/below, faint, for orientation
+            GUI.DrawTexture(r, _tex, ScaleMode.StretchToFill, true);
+            GUI.color = Color.white;
+            GUI.DrawTexture(CellRect(level.GridRect), level.Tex, ScaleMode.StretchToFill, true);
+        }
+        else GUI.DrawTexture(r, _tex, ScaleMode.StretchToFill, true);
+        _style ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+
+        // Stairs and ramps touching this floor: ▼ goes down, ▲ goes up.
+        if (floor >= 0)
+            foreach (var s in MinimapLevels.Stairs)
+            {
+                if (s.From == floor) Dot(ToScreen(s.Grid), 12f, new Color(0.4f, 0.95f, 1f), "▲");
+                else if (s.To == floor) Dot(ToScreen(s.Grid), 12f, new Color(0.4f, 0.95f, 1f), "▼");
+            }
 
         // Safe zones (LightZone triggers: light, fire, interiors, spider tunnels), from their collider bounds.
         _safe ??= Solid(new Color(0.3f, 0.95f, 0.45f, 0.22f)); // semi-transparent: the maze shows through
@@ -187,15 +218,32 @@ internal static class Minimap
             GUI.DrawTexture(zr, _safe);
         }
 
-        if (_end.x >= 0) Dot(ToScreen(_end), Mathf.Max(6f, scale * 1.5f), new Color(1f, 0.3f, 0.25f), "S");
+        // Things on another floor than yours are drawn faint.
+        Color On(Color c, float y) => floor < 0 || MinimapLevels.LevelOf(y) == floor ? c : new Color(c.r, c.g, c.b, 0.35f);
+        if (_end.x >= 0) Dot(ToScreen(_end), Mathf.Max(6f, scale * 1.5f), On(new Color(1f, 0.3f, 0.25f), _origin.y), "S");
         foreach (var (pos, _, _) in CosmeticAlert.PendingTargets())
-            Dot(ToScreen(ToGrid(pos)), 8f, new Color(0.35f, 0.69f, 1f), "◆");
+            Dot(ToScreen(ToGrid(pos)), 8f, On(new Color(0.35f, 0.69f, 1f), pos.y), "◆");
         foreach (var c in Objectives.Pending)
-            Dot(ToScreen(ToGrid(c.Pos)), 10f, Objectives.Colour, Objectives.Glyph(c.Kind));
+            Dot(ToScreen(ToGrid(c.Pos)), 10f, On(Objectives.Colour, c.Pos.y), Objectives.Glyph(c.Kind));
         foreach (var (pos, chasing) in Monsters)
-            Dot(ToScreen(ToGrid(pos)), chasing ? 11f : 9f, chasing ? new Color(1f, 0.15f, 0.1f) : new Color(1f, 0.6f, 0.15f), "X");
+            Dot(ToScreen(ToGrid(pos)), chasing ? 11f : 9f, On(chasing ? new Color(1f, 0.15f, 0.1f) : new Color(1f, 0.6f, 0.15f), pos.y), "X");
         foreach (var p in Players.Others())
-            Dot(ToScreen(ToGrid(p.Pos)), 8f, p.Dead ? new Color(1f, 0.45f, 0.4f) : new Color(0.45f, 1f, 0.5f), "●");
+            Dot(ToScreen(ToGrid(p.Pos)), 8f, On(p.Dead ? new Color(1f, 0.45f, 0.4f) : new Color(0.45f, 1f, 0.5f), p.Pos.y), "●");
+
+        // Which floor, when the map has more than one.
+        if (floor >= 0)
+        {
+            _levelStyle ??= new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.LowerLeft };
+            int num = MinimapLevels.Levels[floor].Number;
+            string label = num == 0 ? Loc.T("Nivel principal", "Main floor")
+                : num < 0 ? Loc.T($"Subsuelo {-num}", $"Basement {-num}") : Loc.T($"Piso +{num}", $"Floor +{num}");
+            var lr = new Rect(r.x + 4, r.yMax - 24, 220, 22);
+            GUI.color = Color.black;
+            GUI.Label(new Rect(lr.x + 1, lr.y + 1, lr.width, lr.height), label, _levelStyle);
+            GUI.color = new Color(0.4f, 0.95f, 1f);
+            GUI.Label(lr, label, _levelStyle);
+            GUI.color = Color.white;
+        }
 
         var cam = Camera.main;
         if (cam != null)
@@ -228,7 +276,8 @@ internal static class Minimap
         }
     }
 
-    private static GUIStyle _note;
+    private static GUIStyle _note, _levelStyle;
+    private static readonly List<float> _levelChecks = new();
     private static Texture2D _safe;
     private static Rect _view; // grid-space area shown: the maze plus whatever around it the players have walked
     private static readonly List<Bounds> SafeZones = new();
