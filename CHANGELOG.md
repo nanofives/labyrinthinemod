@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.17] - 2026-10-28
+
 ### Jugabilidad
 - Tablero de casos (host): si todos en el lobby tienen el DLC egipcio, los mapas egipcios salen 4 veces más seguido.
   Cada jugador con el mod avisa en el lobby si tiene el DLC (chequeo del propio juego); quien no tiene el mod cuenta
