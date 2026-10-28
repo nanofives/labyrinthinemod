@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.14] - 2026-10-27
+
 ### Jugabilidad
 - Las reglas del mod (cosmético nuevo, reparto, variedad) se apagan para todos si alguien del lobby tiene otra versión
   de LabyHelper, con el aviso de quién. Antes cada versión elegía su propio cosmético y en un mismo caso a cada uno le
