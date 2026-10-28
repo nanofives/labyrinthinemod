@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.19] - 2026-10-28
+
 ### Interfaz
 - F1 y F2 ya no se abren juntos: abrir uno cierra el otro.
 - Interruptores de F1: se deslizan al cambiar, y apagados se ven distintos (oscuros, con la perilla gris a la
