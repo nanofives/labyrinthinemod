@@ -210,6 +210,9 @@ internal static class Minimap
         _safe ??= Solid(new Color(0.3f, 0.95f, 0.45f, 0.22f)); // semi-transparent: the maze shows through
         foreach (var b in SafeZones)
         {
+            // The start and exit areas outside the grid are safe zones too, big ones; they're already marked.
+            var centre = ToGrid(b.center);
+            if (centre.x < -0.5f || centre.y < -0.5f || centre.x > _sizeX - 0.5f || centre.y > _sizeY - 0.5f) continue;
             var a = ToScreen(ToGrid(b.min));
             var c = ToScreen(ToGrid(b.max));
             var zr = Rect.MinMaxRect(Mathf.Min(a.x, c.x), Mathf.Min(a.y, c.y), Mathf.Max(a.x, c.x), Mathf.Max(a.y, c.y));
@@ -221,14 +224,41 @@ internal static class Minimap
         // Things on another floor than yours are drawn faint.
         Color On(Color c, float y) => floor < 0 || MinimapLevels.LevelOf(y) == floor ? c : new Color(c.r, c.g, c.b, 0.35f);
         if (_end.x >= 0) Dot(ToScreen(_end), Mathf.Max(6f, scale * 1.5f), On(new Color(1f, 0.3f, 0.25f), _origin.y), "S");
-        foreach (var (pos, _, _) in CosmeticAlert.PendingTargets())
-            Dot(ToScreen(ToGrid(pos)), 8f, On(new Color(0.35f, 0.69f, 1f), pos.y), "◆");
+        foreach (var (pos, _, id) in CosmeticAlert.PendingTargets())
+        {
+            // Large and pulsing so it stands out: the item's picture inside a blue ring.
+            var at = ToScreen(ToGrid(pos));
+            float pulse = 1f + 0.15f * Mathf.Sin(Time.unscaledTime * 6f);
+            float s = Mathf.Clamp(size * 0.13f, 26f, 48f) * pulse;
+            var faint = On(Color.white, pos.y).a < 1f;
+            _ring ??= MakeRing();
+            GUI.color = faint ? new Color(0.35f, 0.69f, 1f, 0.4f) : new Color(0.35f, 0.69f, 1f);
+            GUI.DrawTexture(new Rect(at.x - s * 0.75f, at.y - s * 0.75f, s * 1.5f, s * 1.5f), _ring);
+            GUI.color = faint ? new Color(1f, 1f, 1f, 0.4f) : Color.white;
+            var (icon, frame) = CosmeticAlert.Visuals(id);
+            if (icon != null) Toast.DrawItemIcon(new Rect(at.x - s / 2, at.y - s / 2, s, s), icon, frame);
+            else Dot(at, 14f, new Color(0.35f, 0.69f, 1f), "◆");
+            GUI.color = Color.white;
+        }
         foreach (var c in Objectives.Pending)
             Dot(ToScreen(ToGrid(c.Pos)), 10f, On(Objectives.Colour, c.Pos.y), Objectives.Glyph(c.Kind));
         foreach (var (pos, chasing) in Monsters)
             Dot(ToScreen(ToGrid(pos)), chasing ? 11f : 9f, On(chasing ? new Color(1f, 0.15f, 0.1f) : new Color(1f, 0.6f, 0.15f), pos.y), "X");
+        // Other players: a big dot in their own colour plus their name, so you can tell them apart.
         foreach (var p in Players.Others())
-            Dot(ToScreen(ToGrid(p.Pos)), 8f, On(p.Dead ? new Color(1f, 0.45f, 0.4f) : new Color(0.45f, 1f, 0.5f), p.Pos.y), "●");
+        {
+            var at = ToScreen(ToGrid(p.Pos));
+            var col = On(p.Dead ? new Color(1f, 0.45f, 0.4f) : Players.ColourOf(p.Name), p.Pos.y);
+            Dot(at, 15f, col, "●");
+            _nameStyle ??= new GUIStyle(GUI.skin.label) { fontSize = 13, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            string label = p.Dead ? $"{p.Name} {Loc.T("(caído)", "(down)")}" : p.Name;
+            var nr = new Rect(at.x + 10, at.y - 10, 160, 20);
+            GUI.color = new Color(0f, 0f, 0f, col.a);
+            GUI.Label(new Rect(nr.x + 1, nr.y + 1, nr.width, nr.height), label, _nameStyle);
+            GUI.color = col;
+            GUI.Label(nr, label, _nameStyle);
+            GUI.color = Color.white;
+        }
 
         // Which floor, when the map has more than one.
         if (floor >= 0)
@@ -262,8 +292,10 @@ internal static class Minimap
 
         // Who still has to pick up the case cosmetic, under the map (party members with the mod).
         var missing = CosmeticAlert.StillToPickUp();
+        float below = v.yMax + 8;
         if (missing.Count > 0)
         {
+            below += 48;
             _note ??= new GUIStyle(GUI.skin.label) { fontSize = 15, fontStyle = FontStyle.Bold, alignment = TextAnchor.UpperRight, wordWrap = true };
             string names = string.Join(", ", missing.Select(m => m.IsMe ? Loc.T("vos", "you") : m.Name));
             string text = Loc.T($"◆ Falta agarrar el cosmético: {names}", $"◆ Cosmetic not picked up yet: {names}");
@@ -274,9 +306,74 @@ internal static class Minimap
             GUI.Label(tr, text, _note);
             GUI.color = Color.white;
         }
+        if (Settings.MinimapLegend.Value) DrawLegend(Screen.width - 16, below, floor >= 0);
     }
 
-    private static GUIStyle _note, _levelStyle;
+    /// <summary>What each mark means, in two columns under the map (F1 > Gameplay turns it off).</summary>
+    private static void DrawLegend(float right, float top, bool floors)
+    {
+        var rows = new List<(string glyph, Color colour, string text)>
+        {
+            ("▲", new Color(1f, 0.86f, 0.16f), Loc.T("Vos", "You")),
+            ("●", new Color(0.45f, 1f, 0.5f), Loc.T("Jugador (color propio)", "Player (own colour)")),
+            ("◯", new Color(0.35f, 0.69f, 1f), Loc.T("Cosmético", "Cosmetic")),
+            ("◆", Objectives.Colour, Loc.T("Objetivo", "Objective")),
+            ("O", Objectives.Colour, Loc.T("Dónde va el objeto", "Where an item goes")),
+            ("◎", Objectives.Colour, Loc.T("Lugar a alcanzar", "Place to reach")),
+            ("X", new Color(1f, 0.6f, 0.15f), Loc.T("Monstruo", "Monster")),
+            ("X", new Color(1f, 0.15f, 0.1f), Loc.T("Monstruo persiguiendo", "Monster chasing")),
+            ("S", new Color(1f, 0.3f, 0.25f), Loc.T("Salida", "Exit")),
+            ("■", new Color(0.3f, 0.95f, 0.45f), Loc.T("Zona segura", "Safe zone")),
+            ("■", new Color(0.35f, 0.43f, 0.63f), Loc.T("Landmark", "Landmark")),
+        };
+        if (floors)
+        {
+            rows.Add(("▼▲", new Color(0.4f, 0.95f, 1f), Loc.T("Bajada / subida", "Stairs down / up")));
+            rows.Add(("●", new Color(1f, 1f, 1f, 0.35f), Loc.T("Tenue: en otro piso", "Faint: on another floor")));
+        }
+        _legend ??= new GUIStyle(GUI.skin.label) { fontSize = 12, alignment = TextAnchor.MiddleLeft };
+        _legendGlyph ??= new GUIStyle(GUI.skin.label) { fontSize = 13, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+        const float rowH = 17f, colW = 165f, glyphW = 24f;
+        int perCol = (rows.Count + 1) / 2;
+        var box = new Rect(right - 2 * colW - 12, top, 2 * colW + 12, perCol * rowH + 10);
+        Ui.Panel(box);
+        for (int i = 0; i < rows.Count; i++)
+        {
+            var (glyph, colour, text) = rows[i];
+            float x = box.x + 6 + (i / perCol) * colW, y = box.y + 5 + (i % perCol) * rowH;
+            GUI.color = colour;
+            GUI.Label(new Rect(x, y, glyphW, rowH), glyph, _legendGlyph);
+            GUI.color = new Color(0.9f, 0.9f, 0.9f);
+            GUI.Label(new Rect(x + glyphW + 2, y, colW - glyphW - 4, rowH), text, _legend);
+        }
+        GUI.color = Color.white;
+    }
+
+    private static GUIStyle _legend, _legendGlyph;
+
+    private static GUIStyle _note, _levelStyle, _nameStyle;
+    private static Texture2D _ring;
+
+    /// <summary>64x64 ring (white, tinted when drawn) for the cosmetic marker.</summary>
+    private static Texture2D MakeRing()
+    {
+        const int n = 64;
+        var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, hideFlags = HideFlags.HideAndDontSave };
+        var px = new Color32[n * n];
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float d = new Vector2(x + 0.5f - n / 2f, y + 0.5f - n / 2f).magnitude;
+                float a = Mathf.Clamp01(1f - Mathf.Abs(d - 27f) / 4f);
+                px[y * n + x] = new Color32(255, 255, 255, (byte)(a * 255));
+            }
+        tex.SetPixels32(px);
+        tex.Apply(false);
+        return tex;
+    }
+
+    /// <summary>World position of the maze exit (null when there's no maze or no exit tile).</summary>
+    public static Vector3? ExitWorld => _mapPtr == IntPtr.Zero || _end.x < 0 ? null : _origin + _ax * _end.x + _ay * _end.y;
     private static readonly List<float> _levelChecks = new();
     private static Texture2D _safe;
     private static Rect _view; // grid-space area shown: the maze plus whatever around it the players have walked
@@ -300,7 +397,6 @@ internal static class Minimap
     private static void Grow()
     {
         var pts = new List<Vector2>();
-        foreach (var b in SafeZones) { pts.Add(ToGrid(b.min)); pts.Add(ToGrid(b.max)); }
         var cam = Camera.main;
         if (cam != null) pts.Add(ToGrid(cam.transform.position));
         foreach (var p in Players.Others()) pts.Add(ToGrid(p.Pos));

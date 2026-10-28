@@ -129,6 +129,24 @@ internal static class Catalog
         return Il2CppValkoGames.Labyrinthine.DLCManager.IsDLCAvailable(dlc);
     }
 
+    /// <summary>
+    /// Items the case rule may spawn even though no case pool has them (store, level rewards, limited...): real items
+    /// with a model, not music (nothing to show on the floor), not the Egyptian DLC (a player without it would get a
+    /// broken pickup; those still drop on the Egypt maps), not the ones known to have no model.
+    /// </summary>
+    public static bool Spawnable(ushort id)
+    {
+        try
+        {
+            var item = ItemById(id);
+            if (item == null || !CustomizationItemExtensions.IsValid(item)) return false;
+            if (item.BodyPart == BodyPart.Music || item.ItemRarity == ItemRarity.DLC_Egyptian) return false;
+            if (item.Icon != null && MusicIcons().Contains(item.Icon.Pointer)) return false; // unfinished placeholder
+            return !BrokenItems.IsBroken(id);
+        }
+        catch { return false; }
+    }
+
     private static readonly HashSet<ushort> HiddenLogged = new();
     private static HashSet<System.IntPtr> _musicIcons;
     private static ItemsCollectionSO _musicIconsFrom;

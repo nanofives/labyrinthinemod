@@ -29,6 +29,7 @@ public class Core : MelonMod
         SprintBoost.Apply(HarmonyInstance);
         BrokenItems.Apply(HarmonyInstance);
         BoardSeals.Apply(HarmonyInstance);
+        MapSizeCap.Apply(HarmonyInstance);
         RandomCaseRule.Apply(HarmonyInstance);
         MapVariety.Apply(HarmonyInstance);
 #if EXPERIMENTS

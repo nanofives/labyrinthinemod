@@ -61,7 +61,8 @@ internal static class Distribution
 
     /// <summary>
     /// Every item any random case of this kind can drop once RandomCaseRule may swap a pickup's itemID: all maps'
-    /// pools (normal or hardcore) plus the seasonal pools for non-hardcore cases.
+    /// pools (normal or hardcore) plus the seasonal pools for non-hardcore cases, and with "every cosmetic" on, every
+    /// other spawnable item (store, level rewards, limited...) for non-hardcore cases.
     /// </summary>
     public static HashSet<ushort> Obtainable(bool hardcore)
     {
@@ -69,6 +70,12 @@ internal static class Distribution
         foreach (var mp in PoolCache.Current.Maps.Values)
             foreach (var e in (hardcore ? mp.Hardcore : mp.Normal).SelectMany(l => l)) set.Add(e.Id);
         if (!hardcore) foreach (var e in PoolCache.Current.Seasonal.Values.SelectMany(v => v.Items)) set.Add(e.Id);
+        if (!hardcore && Settings.PoolEverything.Value)
+        {
+            var inHardcore = Obtainable(hardcore: true); // hardcore-only items stay hardcore
+            foreach (var id in Catalog.AllIds())
+                if (!inHardcore.Contains(id) && Catalog.Spawnable(id)) set.Add(id);
+        }
         set.Remove(0xFFFF);
         return set;
     }

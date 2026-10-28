@@ -5,6 +5,30 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Jugabilidad
+- Los casos random también pueden dar los cosméticos que no salen de ningún caso (tienda, recompensas por nivel,
+  limitados), con el mismo truco que ya traía ítems de otros mapas. No incluye la música (no tiene modelo en el piso)
+  ni el DLC egipcio (a quien no lo tiene le saldría roto; esos salen en los mapas egipcios). Se apaga en
+  F1 > Cosméticos.
+- Tablero de casos (host): cuando a alguien le faltan cosméticos que solo salen en casos HARDCORE, alrededor de 1 de
+  cada 4 carpetas pasa a HARDCORE, y todas cuando ya no queda nada más por sacar de casos normales. Antes solo quedaban
+  las HARDCORE que tiraba el juego (pocas), y con esos cosméticos faltantes el reparto quedaba vacío.
+- Tablero de casos (host): las carpetas random salen de tamaño mediano, chico o muy chico (Grande pasa a Muy chico,
+  Muy grande a Chico y Gigante a Mediano). Las que ya estaban cambian al recargar el tablero o rerollear. Se apaga en
+  F1 > Dificultad. Los casos custom mantienen el tamaño elegido.
+
+### Información (no cambia la jugabilidad)
+- Palancas y efigies en el minimapa y en F9: el juego las marca como "colocadas" desde el inicio y el mod las daba por
+  hechas. Ahora quedan pendientes hasta tirar la palanca o destruir la efigie.
+- Leyenda debajo del minimapa con qué significa cada color y símbolo (vos, jugadores, cosmético, objetivos,
+  monstruos, salida, zonas seguras, landmarks y, en mapas con pisos, bajadas/subidas). Se apaga en F1 > Partida.
+- Jugadores en el minimapa: punto grande con su nombre al lado, y cada uno con su propio color (el mismo en su
+  marcador del mundo con F9).
+- El cosmético en el minimapa se ve grande: su imagen dentro de un anillo azul que late.
+- Con F9, la salida del laberinto se marca en el mundo como "SEXY SALIDA" con la distancia, a través de paredes.
+- El MINER se llama LEDES y la MARIONETTE se llama CAS en el cartel de persecución.
+- Minimapa: ya no dibuja las zonas seguras grandes de la entrada y la salida (fuera de la grilla).
+
 ## [0.3.15] - 2026-10-27
 
 ### Arreglado

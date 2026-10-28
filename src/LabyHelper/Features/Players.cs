@@ -11,6 +11,21 @@ internal static class Players
 {
     public record Other(Vector3 Pos, string Name, bool Dead);
 
+    // Distinct, readable on the dark minimap; none of them the monsters' orange/red or the cosmetic's blue.
+    private static readonly Color[] Colours =
+    {
+        new(0.45f, 1f, 0.5f), new(1f, 0.85f, 0.3f), new(0.95f, 0.5f, 1f), new(0.4f, 1f, 0.95f),
+        new(1f, 1f, 1f), new(0.7f, 0.85f, 0.4f), new(1f, 0.65f, 0.8f), new(0.65f, 0.65f, 1f),
+    };
+
+    /// <summary>Same colour for the same player everywhere (minimap and world marker), from their name.</summary>
+    public static Color ColourOf(string name)
+    {
+        uint h = 2166136261;
+        foreach (char c in name ?? "") h = (h ^ c) * 16777619;
+        return Colours[h % (uint)Colours.Length];
+    }
+
     private static readonly List<Other> Cache = new();
     private static float _next;
 

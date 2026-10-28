@@ -136,6 +136,7 @@ internal static class OptionsMenu
         Toggle(ref cy, cw, Loc.T("Casos random: siempre cosmético y solo nuevos", "Random cases: always a cosmetic, only new ones"), Settings.RandomCasesOnlyNew);
         Toggle(ref cy, cw, Loc.T("Repartir los nuevos entre las 4 carpetas", "Spread new items across the 4 case files"), Settings.DistributeAcrossCases);
         Toggle(ref cy, cw, Loc.T("Carpetas siempre con sello (azul o HARDCORE si falta alguno)", "Case files always sealed (blue, or HARDCORE while one is missing)"), Settings.BoardOnlySealed);
+        Toggle(ref cy, cw, Loc.T("Carpetas de tamaño mediano a muy chico", "Case files medium to very small"), Settings.SmallMapsOnly);
         Toggle(ref cy, cw, Loc.T("Sincronizar con los jugadores (necesitan el mod)", "Sync with other players (they need the mod)"), Settings.PartySync);
 
         Section(ref cy, cw, Loc.T("Variedad de mapa (casos random, todos con el mod)", "Map variety (random cases, everyone modded)"));
@@ -148,6 +149,7 @@ internal static class OptionsMenu
         Slider(ref cy, cw, Loc.T("Chance de temporada (-1 = la del juego)", "Seasonal chance (-1 = game default)"), Settings.SeasonalChance, -1f, 1f, "0.00");
         Toggle(ref cy, cw, Loc.T("Priorizar los que nadie del grupo tiene", "Prefer items nobody in the party owns"), Settings.PoolPreferNew);
         Toggle(ref cy, cw, Loc.T("Sumar todos los eventos al pool", "Add every event to the pool"), Settings.PoolAddAllSeasonal);
+        Toggle(ref cy, cw, Loc.T("Sumar los de tienda, recompensas y limitados", "Add store, reward and limited items"), Settings.PoolEverything);
 
         Section(ref cy, cw, Loc.T("Avisos", "Alerts"));
         Toggle(ref cy, cw, Loc.T("Aviso del cosmético del caso", "Case cosmetic alert"), Settings.CosmeticAlertEnabled);
@@ -176,6 +178,7 @@ internal static class OptionsMenu
         Slider(ref cy, cw, Loc.T("Cada cuántos segundos", "Every N seconds"), Settings.AutoGlowstickSeconds, 1f, 60f, "0");
         Toggle(ref cy, cw, Loc.T("Minimapa (F4)", "Minimap (F4)"), Settings.MinimapEnabled);
         Slider(ref cy, cw, Loc.T("Tamaño del minimapa (px)", "Minimap size (px)"), Settings.MinimapSize, 120f, 600f, "0");
+        Toggle(ref cy, cw, Loc.T("Leyenda del minimapa", "Minimap legend"), Settings.MinimapLegend);
         Toggle(ref cy, cw, Loc.T("Ignorar detector de trampas del juego", "Ignore the game's cheat detector"), Settings.DisableCheatDetector);
 
 #if EXPERIMENTS

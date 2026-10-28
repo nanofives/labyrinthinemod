@@ -28,13 +28,16 @@ internal static class Settings
     public static MelonPreferences_Entry<bool> AutoGlowstick;
     public static MelonPreferences_Entry<bool> AutoUpdate;
     public static MelonPreferences_Entry<bool> BoardOnlySealed;
+    public static MelonPreferences_Entry<bool> SmallMapsOnly;
     public static MelonPreferences_Entry<bool> CosmeticPanelOnByDefault;
     public static MelonPreferences_Entry<float> AutoGlowstickSeconds;
     public static MelonPreferences_Entry<bool> MinimapEnabled;
     public static MelonPreferences_Entry<float> MinimapSize;
+    public static MelonPreferences_Entry<bool> MinimapLegend;
     public static MelonPreferences_Entry<float> HudTextTop;
     public static MelonPreferences_Entry<bool> AutoFlashlight;
     public static MelonPreferences_Entry<bool> PoolAddAllSeasonal;
+    public static MelonPreferences_Entry<bool> PoolEverything;
     public static MelonPreferences_Entry<bool> RandomCasesOnlyNew;
     public static MelonPreferences_Entry<bool> DistributeAcrossCases;
     public static MelonPreferences_Entry<bool> PartySync;
@@ -81,6 +84,8 @@ internal static class Settings
             description: "Velocidad al correr de tu jugador (x, 1 = la del juego). No afecta a los monstruos. Cada jugador necesita el mod para tenerla.");
         BoardOnlySealed = _cat.CreateEntry("BoardOnlySealed", true,
             description: "Como host: todos los casos random del tablero salen con sello (azul o HARDCORE). HARDCORE solo mientras a alguien del grupo le falte un cosmetico HARDCORE.");
+        SmallMapsOnly = _cat.CreateEntry("SmallMapsOnly", true,
+            description: "Como host: las carpetas random del tablero salen de tamano mediano, chico o muy chico (Grande -> Muy chico, Muy grande -> Chico, Gigante -> Mediano).");
         AutoUpdate = _cat.CreateEntry("AutoUpdate", true,
             description: "Al abrir el juego, baja la ultima version de GitHub antes de cargar el mod (plugin LabyHelper.Updater).");
         CosmeticPanelOnByDefault = _cat.CreateEntry("CosmeticPanelOnByDefault", true,
@@ -94,6 +99,8 @@ internal static class Settings
             description: "Minimapa fijo arriba a la derecha durante los casos. F4 lo muestra/oculta.");
         MinimapSize = _cat.CreateEntry("MinimapSize", 260f,
             description: "Lado del minimapa en pixeles (120 a 600).");
+        MinimapLegend = _cat.CreateEntry("MinimapLegend", true,
+            description: "Leyenda de colores y simbolos debajo del minimapa.");
         HudTextTop = _cat.CreateEntry("HudTextTopPct", 11f,
             description: "Altura del texto de LabyHelper a la izquierda (aviso del cosmetico, F9), en % de la pantalla desde arriba. Mas abajo que las condiciones del caso del juego.");
         AutoFlashlight = _cat.CreateEntry("AutoFlashlight", true,
@@ -106,6 +113,8 @@ internal static class Settings
             description: "Como host: excluye del sorteo los cosmeticos que ya tenes, asi sale uno nuevo mientras quede alguno en el pool. Se cambia en Opciones LabyHelper (F1).");
         PoolAddAllSeasonal = _cat.CreateEntry("PoolAddAllSeasonal", true,
             description: "Como host: suma al pool del mapa los cosmeticos de todos los eventos de temporada (no aplica a Hardcore).");
+        PoolEverything = _cat.CreateEntry("PoolEverything", true,
+            description: "Como host: los casos random tambien pueden dar cosmeticos que no salen de ningun caso (tienda, recompensas por nivel, limitados). No incluye musica ni el DLC egipcio.");
         RandomCasesOnlyNew = _cat.CreateEntry("RandomCasesOnlyNew", true,
             description: "Como host: en los casos random (del tablero y custom) siempre sale un cosmetico y solo uno que le falte a alguien del grupo. Solo se apaga desde Opciones LabyHelper (F1).");
         DistributeAcrossCases = _cat.CreateEntry("DistributeAcrossCases", true,

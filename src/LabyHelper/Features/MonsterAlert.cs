@@ -159,6 +159,8 @@ internal static class MonsterAlert
         MonsterType.BlackBride_Crimson => "Crimson Bride",
         MonsterType.Oni_Ash => "Ash Oni",
         MonsterType.ChainsawMan => "Chainsaw Man",
+        MonsterType.Miner => "LEDES", // by request
+        MonsterType.Marionette => "CAS", // by request
         MonsterType.DLC_Egyptian_Anubis => "Anubis",
         MonsterType.DLC_Egyptian_Mummy => "Mummy",
         MonsterType.DLC_Egyptian_Sand_Zombie => "Sand Zombie",

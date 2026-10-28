@@ -25,6 +25,7 @@ internal static class WorldMarker
         {
             DrawPlayers(cam);
             DrawObjectives(cam);
+            DrawExit(cam);
         }
 
         foreach (var (pos, name, id) in CosmeticAlert.PendingTargets())
@@ -82,7 +83,7 @@ internal static class WorldMarker
             var rect = new Rect(x - 150, y - 25, 300, 50);
             GUI.color = Color.black;
             GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), label, _style);
-            GUI.color = p.Dead ? DownColor : PlayerColor;
+            GUI.color = p.Dead ? DownColor : Players.ColourOf(p.Name);
             GUI.Label(rect, label, _style);
             GUI.color = Color.white;
         }
@@ -108,6 +109,30 @@ internal static class WorldMarker
     }
 
     private static GUIStyle _small;
+    private static readonly Color ExitColor = new(1f, 0.35f, 0.6f);
+
+    /// <summary>The maze exit, "SEXY SALIDA" (by request), pinned to the screen edge when off-screen.</summary>
+    private static void DrawExit(Camera cam)
+    {
+        if (Minimap.ExitWorld is not Vector3 exit) return;
+        Vector3 sp = cam.WorldToScreenPoint(exit + Vector3.up * 2f);
+        bool behind = sp.z < 0;
+        if (behind) sp = -sp;
+        float x = sp.x, y = Screen.height - sp.y;
+        const float margin = 60f;
+        bool offscreen = behind || x < margin || x > Screen.width - margin || y < margin || y > Screen.height - margin;
+        x = Mathf.Clamp(x, margin, Screen.width - margin);
+        y = Mathf.Clamp(y, margin, Screen.height - margin);
+        float meters = Vector3.Distance(cam.transform.position, exit);
+        string name = Loc.T("SEXY SALIDA", "SEXY EXIT");
+        string label = offscreen ? $"{Arrow(x, y)} {name}\n{meters:0} m" : $"● {name}\n{meters:0} m";
+        var rect = new Rect(x - 150, y - 25, 300, 50);
+        GUI.color = Color.black;
+        GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), label, _style);
+        GUI.color = ExitColor;
+        GUI.Label(rect, label, _style);
+        GUI.color = Color.white;
+    }
 
     private static string Arrow(float x, float y)
     {

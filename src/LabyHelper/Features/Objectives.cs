@@ -15,8 +15,8 @@ namespace LabyHelper.Features;
 /// <summary>
 /// What the case still asks you to do, refreshed once a second during a case, for the minimap, the F9 panel and the
 /// F9 world markers (only what's still pending):
-///  - CaseInteractableObject (seals, effigies, levers, gasoline, map-specific items): pick up / use / destroy while
-///    not IsPickedUp, not IsInserted, not IsDisabled.
+///  - CaseInteractableObject (seals, gasoline, map-specific items): pick up / use while not IsPickedUp, not IsInserted,
+///    not IsDisabled. Levers and effigies start "inserted": pending until pulled out / destroyed.
 ///  - RndInteractableItemInsertPlaceholder: where a picked-up item goes, until IsInserted.
 ///  - RndUpdateObjectivesOnTrigger: "reach this place" objectives, while their trigger collider is on.
 ///  - RndMazeGInteractable (Maze_G objective objects).
@@ -86,6 +86,16 @@ internal static class Objectives
             {
                 if (o == null || !InScene(o)) continue;
                 seen++;
+                string type = o.GetIl2CppType().Name;
+                // Levers and effigies stand in place: their Start sets IsInserted, so that flag means nothing for
+                // them. A lever is done once pulled out (IsPulledOut = IsPickedUp); an effigy once destroyed (its
+                // visuals go away), and either once disabled.
+                if (type is "RndLever" or "RndEffigy")
+                {
+                    if (o.IsDisabled || o.IsPickedUp || (o.visuals != null && !o.visuals.activeSelf)) continue;
+                    Pending.Add(new Clue(o.transform.position, Kind.Item, Label(type, o.gameObject.name)));
+                    continue;
+                }
                 if (o.IsDisabled || o.IsInserted) continue;
                 bool slot = o.TryCast<InsertPlaceholder>() != null;
                 if (!slot && o.IsPickedUp) continue;
