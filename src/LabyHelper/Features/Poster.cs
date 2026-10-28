@@ -14,7 +14,7 @@ namespace LabyHelper.Features;
 /// </summary>
 internal static class Poster
 {
-    private const float MaxDist = 6f, Size = 1.2f, Eye = 1.6f;
+    private const float MaxDist = 6f, Size = 2.4f, Eye = 1.6f, Centre = 2.9f;
     private static GameObject _go;
     private static bool _done;
     private static float _next;
@@ -60,14 +60,34 @@ internal static class Poster
         }
 
         var normal = new Vector3(best.normal.x, 0f, best.normal.z).normalized;
+        // As high as the wall allows: centre at 2.9 m (bottom edge 1.7 m), lowered while the top edge would stick
+        // out above the wall or the poster would run off its sides.
+        float centre = Centre;
+        for (; centre > Size / 2f + 0.2f; centre -= 0.2f)
+            if (WallCovers(best.point, normal, cosmetic.y + centre)) break;
+        var at = new Vector3(best.point.x, cosmetic.y + centre, best.point.z);
         _go = new GameObject("LabyHelper Poster");
-        _go.transform.position = best.point + normal * 0.03f;
+        _go.transform.position = at + normal * 0.03f;
         _go.transform.rotation = Quaternion.LookRotation(-normal, Vector3.up); // a quad shows its -Z side
 
         // Dark frame slightly larger, then the picture just in front of it.
         Quad(_go.transform, Size + 0.1f, 0f, Solid(new Color(0.08f, 0.06f, 0.05f)));
         Quad(_go.transform, Size, 0.01f, Picture());
         Core.Log.Msg($"Poster: on a wall {bestDist:0.0} m from the cosmetic at {best.point}.");
+    }
+
+    /// <summary>The wall is there behind the poster's four corners at this centre height.</summary>
+    private static bool WallCovers(Vector3 point, Vector3 normal, float centreY)
+    {
+        var side = Vector3.Cross(Vector3.up, normal).normalized;
+        float h = Size / 2f - 0.05f;
+        foreach (var (sx, sy) in new[] { (-1f, -1f), (1f, -1f), (-1f, 1f), (1f, 1f) })
+        {
+            var corner = new Vector3(point.x, centreY, point.z) + side * (sx * h) + Vector3.up * (sy * h) + normal * 0.5f;
+            if (!Physics.Raycast(corner, -normal, out var hit, 1f, ~0, QueryTriggerInteraction.Ignore)) return false;
+            if (Vector3.Dot(hit.normal, normal) < 0.8f) return false;
+        }
+        return true;
     }
 
     private static void Quad(Transform parent, float size, float outward, Texture2D tex)

@@ -5,6 +5,24 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Interfaz
+- F1 y F2 ya no se abren juntos: abrir uno cierra el otro.
+- Interruptores de F1: se deslizan al cambiar, y apagados se ven distintos (oscuros, con la perilla gris a la
+  izquierda). Ya no tienen líneas horizontales en el medio.
+
+### Información (no cambia la jugabilidad)
+- Mapa grande con ruta: **M** abre el minimapa en grande en el medio de la pantalla (con todo lo que muestra el
+  chico). Clic marca un destino, clic derecho lo borra. El mod calcula el camino por el laberinto desde donde estás,
+  lo dibuja en los dos mapas y lo va recalculando mientras caminás. En la próxima esquina flota una flecha 3D grande
+  y brillante que apunta hacia dónde doblar (se mueve y late), y a través de paredes se marcan esa esquina y el
+  destino con la distancia. Al llegar se borra solo. Funciona aunque el minimapa esté
+  apagado. Solo el piso principal del laberinto.
+- La barra de teclas de arriba se ve siempre (también en medio del caso) y muestra M (minimapa grande y ruta) y TAB
+  (leyenda).
+- Leyenda del minimapa: del mismo ancho que el minimapa, con "SEXY SALIDA". Aparece 10 s al empezar el caso y se
+  oculta sola; TAB la vuelve a mostrar (mantenido, queda mientras lo apretás y 10 s más).
+- Póster junto al cosmético: el doble de grande (2,4 m) y más alto en la pared (bajo solo si la pared no llega).
+
 ## [0.3.18] - 2026-10-28
 
 ### Interfaz

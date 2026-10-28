@@ -108,6 +108,7 @@ public class Core : MelonMod
     {
         Safe("WorldMarker.Draw", () => WorldMarker.Draw());
         Safe("Minimap.Draw", () => Minimap.Draw());
+        Safe("Minimap.DrawRouteMarkers", () => Minimap.DrawRouteMarkers());
         Safe("CollectionViewer.Draw", () => CollectionViewer.Draw());
         Safe("OptionsMenu.Draw", () => OptionsMenu.Draw());
         Safe("CaseBoard.DrawTooltip", () => CaseBoard.DrawTooltip());

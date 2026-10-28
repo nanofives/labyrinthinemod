@@ -5,7 +5,7 @@ namespace LabyHelper.Features;
 
 /// <summary>
 /// Strip across the top of the screen with one key cap per F key and what it does, lit when that feature is on.
-/// Drawn by OptionsMenu in the lobby, in a case's safe zones and while a panel is open, in the game's brush style. In a case it
+/// Drawn by OptionsMenu all the time (menus, lobby, cases), in the game's brush style. In a case it
 /// stays clear of the minimap and wraps into more rows if needed.
 /// </summary>
 internal static class HotkeyBar
@@ -18,6 +18,8 @@ internal static class HotkeyBar
     {
         new("F1", Loc.T("Opciones", "Options"), null),
         new("F2", Loc.T("Colección", "Collection"), null),
+        new("M", Loc.T("Minimapa grande y ruta", "Big minimap and route"), null),
+        new("TAB", Loc.T("Leyenda", "Legend"), null),
         new("F6", Loc.T("Brillo", "Brightness"), Settings.BrightnessEnabled.Value),
         new("F7/F8", Loc.T("Exposición -/+", "Exposure -/+"), null),
         new("F9", Loc.T("Cosmético y jugadores", "Cosmetic and players"), CosmeticAlert.Pinned),

@@ -176,3 +176,22 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
       la pared más cercana al cosmético, mirando hacia afuera, a la altura de los ojos, iluminado por la linterna.
 - [ ] Sin pared a menos de 6 m: log `Poster: no wall within 6 m of the cosmetic.` y nada colgado.
 - [ ] No traba al jugador (no tiene colisión). F1 > Avisos lo apaga para el próximo caso.
+
+## 0.3.19
+- [ ] Con F2 abierto, F1 cierra F2 y abre opciones (y al revés). El jugador sigue quieto y el cursor libre en el cambio.
+- [ ] Interruptores: al hacer clic la perilla se desliza (~0,2 s); apagado = píldora oscura, perilla gris a la izquierda;
+      prendido = blanca, perilla negra a la derecha. Sin líneas en el medio.
+- [ ] Póster: 2,4 m de lado, borde de abajo a ~1,7 m; en paredes bajas queda más abajo pero sin sobresalir por arriba.
+- [ ] Leyenda: mismo ancho que el minimapa (probá tamaños chicos y grandes en F1: pasa a una columna si no entra),
+      fila "SEXY SALIDA". Se ve 10 s al empezar el caso y se desvanece; TAB la muestra de nuevo 10 s.
+- [ ] M en un caso: mapa grande en el medio, fondo oscurecido, jugador quieto y cursor libre. M o Esc lo cierran.
+      Abrir F1 o F2 lo cierra (y M cierra F1/F2).
+- [ ] Clic en un pasillo: línea celeste desde vos hasta el destino por los pasillos (sin cruzar paredes), en el mapa
+      grande y en el minimapa; se recalcula al caminar. Clic en una pared marca el pasillo más cercano. Clic derecho borra.
+- [ ] En el mundo: "DOBLA ACA · N M" en la próxima esquina y "DESTINO · N M" celeste, a través de paredes.
+- [ ] Al llegar: "Llegaste al destino" y se borra la ruta. Con el minimapa apagado en F1, M igual funciona.
+- [ ] Revisar que M no choque con ninguna tecla del juego.
+- [ ] Flecha 3D celeste en la próxima esquina, de frente al acercarte, apuntando hacia donde hay que doblar; sube y baja
+      y empuja hacia el giro. Pasa a la siguiente esquina al doblar; sin giros restantes desaparece. Log
+      `Route: 3D turn arrow ready (HDRP/Unlit)`.
+- [ ] Barra de teclas siempre visible (menú, lobby, todo el caso), con M "Minimapa grande y ruta" y TAB "Leyenda"; en el caso no tapa el minimapa.

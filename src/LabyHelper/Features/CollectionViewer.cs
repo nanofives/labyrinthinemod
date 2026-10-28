@@ -47,6 +47,8 @@ internal static class CollectionViewer
 
     public static bool IsOpen => _open;
 
+    public static void Close() { if (_open) SetOpen(false); }
+
     private static void Toggle() => SetOpen(!_open);
 
     private static void SetOpen(bool open)
@@ -56,6 +58,7 @@ internal static class CollectionViewer
         _scroll = 0;
         // Over gameplay (not from the game's customization menu): stop the player and free the cursor.
         Ui.Capture("F2", open && !_menuOpen);
+        if (open) { OptionsMenu.Close(); Minimap.CloseBig(); } // one panel at a time
     }
 
     public static void OnSceneLoaded() => SetOpen(false);

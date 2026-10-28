@@ -159,7 +159,7 @@ internal static class Ui
     private static void Pill(Rect r, Texture2D t, Color c)
     {
         if (t == null) { Fill(r, c); return; }
-        Sliced(r, t, t.width / 2f, r.height / 2f, c);
+        Sliced(r, t, t.width / 2f - 3f, r.height / 2f, c);
     }
 
     private static void Knob(Rect r, Color c)
@@ -244,16 +244,74 @@ internal static class Ui
     public static bool Switch(Rect r, bool on, string key)
     {
         float h = Hover("sw:" + key, MouseIn(r));
-        float t = Ease(Anim.TryGetValue("swv:" + key, out var v) ? v : (on ? 1f : 0f));
-        if (Event.current.type == EventType.Repaint) Anim["swv:" + key] = Mathf.MoveTowards(t, on ? 1f : 0f, Time.unscaledDeltaTime * 8f);
-        var paper = Paper;
-        if (h > 0f) Pill(r, UiSkin.Round, new Color(0.49f, 0.49f, 0.49f, 0.35f * h));
-        Pill(r, UiSkin.Round, new Color(paper.r, paper.g, paper.b, 0.92f * t));
-        Pill(r, UiSkin.Ring, paper);
-        float k = r.height - 10f;
-        var knob = new Rect(Mathf.Lerp(r.x + 5f, r.xMax - 5f - k, t), r.y + 5f, k, k);
-        Knob(knob, Color.Lerp(paper, Ink, t));
+        // Raw 0..1 progress is stored; easing is only applied when drawing (~0.2 s slide).
+        string k = "swv:" + key;
+        float v = Anim.TryGetValue(k, out var raw) ? raw : (on ? 1f : 0f);
+        if (Event.current.type == EventType.Repaint) Anim[k] = Mathf.MoveTowards(v, on ? 1f : 0f, Time.unscaledDeltaTime * 5f);
+        float t = Mathf.SmoothStep(0f, 1f, v);
+
+        // Own anti-aliased capsules (a sliced circle left seams through the middle). Off: dark pill, grey outline,
+        // grey knob on the left. On: white pill, black knob on the right.
+        _capFill ??= MakeCapsule(false);
+        _capRing ??= MakeCapsule(true);
+        var offFill = new Color(0.12f, 0.12f, 0.13f, 0.85f);
+        var fill = Color.Lerp(offFill, Paper, t);
+        if (h > 0f) fill = Color.Lerp(fill, t > 0.5f ? Color.white : new Color(0.25f, 0.25f, 0.27f, 0.9f), 0.6f * h);
+        Draw(r, _capFill, fill);
+        Draw(r, _capRing, Color.Lerp(new Color(0.55f, 0.55f, 0.55f, 1f), Paper, t));
+        float ks = r.height - 10f;
+        var knob = new Rect(Mathf.Lerp(r.x + 5f, r.xMax - 5f - ks, t), r.y + 5f, ks, ks);
+        _dot ??= MakeDot();
+        Draw(knob, _dot, Color.Lerp(new Color(0.6f, 0.6f, 0.6f, 1f), Ink, t));
         return Clicked(r) ? !on : on;
+    }
+
+    private static Texture2D _capFill, _capRing, _dot;
+
+    private static void Draw(Rect r, Texture2D t, Color c)
+    {
+        var prev = GUI.color;
+        GUI.color = c;
+        GUI.DrawTexture(r, t, ScaleMode.StretchToFill, true);
+        GUI.color = prev;
+    }
+
+    /// <summary>A capsule the switch's shape (70x34) at 4x, filled or as a 3 px (screen) outline, anti-aliased.</summary>
+    private static Texture2D MakeCapsule(bool outline)
+    {
+        const int w = 280, h = 136;
+        const float rad = h / 2f, stroke = 12f;
+        var px = new Color32[w * h];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float cx = Mathf.Clamp(x + 0.5f, rad, w - rad), cy = rad;
+                float d = new Vector2(x + 0.5f - cx, y + 0.5f - cy).magnitude - rad; // <0 inside
+                float a = outline ? Mathf.Clamp01(0.5f - (Mathf.Abs(d + stroke / 2f) - stroke / 2f)) : Mathf.Clamp01(0.5f - d);
+                px[y * w + x] = new Color32(255, 255, 255, (byte)(a * 255));
+            }
+        return FromPixels(w, h, px);
+    }
+
+    private static Texture2D MakeDot()
+    {
+        const int n = 128;
+        var px = new Color32[n * n];
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float d = new Vector2(x + 0.5f - n / 2f, y + 0.5f - n / 2f).magnitude - n / 2f;
+                px[y * n + x] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(0.5f - d) * 255));
+            }
+        return FromPixels(n, n, px);
+    }
+
+    private static Texture2D FromPixels(int w, int h, Color32[] px)
+    {
+        var t = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+        t.SetPixels32(px);
+        t.Apply(false);
+        return t;
     }
 
     private static GUIStyle _arrow;

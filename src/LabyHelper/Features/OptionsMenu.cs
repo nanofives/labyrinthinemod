@@ -7,7 +7,7 @@ namespace LabyHelper.Features;
 /// <summary>
 /// "Opciones LabyHelper": every mod setting in one wide panel, split into tabs, drawn in the game's style (Ui).
 /// F1 opens it anywhere (menus, lobby, during a case); over gameplay it stops the player and frees the cursor like the
-/// game's own popups. A button also shows up while the game's settings screen is open (detected through
+/// game's own popups. The key bar across the top is always on screen. A button also shows up while the game's settings screen is open (detected through
 /// LabyrinthineSettingsManager's controls being visible). A bar across the top of the screen lists the F keys in the
 /// lobby and in a case's safe zones.
 /// The difficulty gate and the minimap can only be switched here (no hotkey), by design.
@@ -56,6 +56,10 @@ internal static class OptionsMenu
 
     public static void OnSceneLoaded() => SetOpen(false);
 
+    public static bool IsOpen => _open;
+
+    public static void Close() { if (_open) SetOpen(false); }
+
     private static float _top = 8f; // below the F-key bar when it's on screen (updated every frame)
 
     /// <summary>Where the F1 panel goes; the F2 collection uses the same rectangle.</summary>
@@ -77,6 +81,9 @@ internal static class OptionsMenu
             _prevVisible = Cursor.visible;
             // Over gameplay (not from the game's settings screen): stop the player and free the cursor.
             Ui.Capture("F1", !_settingsOpen);
+            // One panel at a time (closed after capturing, so the player stays stopped).
+            CollectionViewer.Close();
+            Minimap.CloseBig();
             UpdateInfo.CheckOnce();
         }
         else
@@ -89,8 +96,8 @@ internal static class OptionsMenu
         }
     }
 
-    /// <summary>Where the F-key bar shows: the lobby, or a case while you're in a safe zone (and with a panel up).</summary>
-    private static bool BarVisible => GameState.InLobby || (GameState.InCase && Players.MeInSafeZone());
+    /// <summary>The key bar is always on screen (Mariano): menus, lobby and the whole case.</summary>
+    private static bool BarVisible => true;
 
     private static bool GameSettingsVisible()
     {

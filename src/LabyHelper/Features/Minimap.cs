@@ -20,7 +20,7 @@ namespace LabyHelper.Features;
 /// Safe zones (LightZone triggers) are drawn semi-transparent green on top, and the view grows past the maze edge to cover the start area and wherever the players walk outside the grid. Under it, who still has to pick up
 /// the case cosmetic.
 /// </summary>
-internal static class Minimap
+internal static partial class Minimap
 {
     private static Texture2D _tex;
     private static IntPtr _mapPtr;
@@ -74,6 +74,7 @@ internal static class Minimap
         _mapPtr = IntPtr.Zero;
         _end = new Vector2(-1, -1);
         Trails.Clear();
+        ResetRoute();
     }
 
     // ---- trails: where each player walked lately, as a line (a point every TrailStep metres, the last TrailMax) ----
@@ -191,7 +192,9 @@ internal static class Minimap
 
     public static void Update()
     {
-        if (!Settings.MinimapEnabled.Value || !GameState.InCase) return;
+        if (!GameState.InCase) return;
+        UpdateRoute(); // M (big map) works with the corner minimap off too
+        if (Input.GetKey(KeyCode.Tab)) _legendUntil = Time.unscaledTime + LegendSeconds;
         if (Settings.MinimapTrail.Value && _mapPtr != IntPtr.Zero && Time.unscaledTime >= _nextTrail) RecordTrails();
         if (Time.unscaledTime >= _nextMonsters) RefreshMonsters();
         if (_mapPtr != IntPtr.Zero && Time.unscaledTime >= _nextSafe) RefreshSafeZones();
@@ -222,12 +225,16 @@ internal static class Minimap
         if (sx <= 0 || sy <= 0 || sx > 1024 || sy > 1024) return;
 
         var px = new Color32[sx * sy];
+        _walk = new bool[sx, sy];
+        _target = null;
+        Route.Clear();
         _end = new Vector2(-1, -1);
         for (int y = 0; y < sy; y++)
             for (int x = 0; x < sx; x++)
             {
                 var t = map[x, y];
                 if (t == TileType.End) _end = new Vector2(x, y);
+                _walk[x, y] = t != TileType.Wall;
                 px[y * sx + x] = Colour(t);
             }
         if (_tex == null || _tex.width != sx || _tex.height != sy)
@@ -247,6 +254,7 @@ internal static class Minimap
         _mapPtr = map.Pointer;
         _view = new Rect(0, 0, sx, sy);
         Trails.Clear();
+        _legendUntil = Time.unscaledTime + LegendSeconds; // new maze = the case just started
         MinimapLevels.Clear();
         _levelChecks.Clear();
         foreach (var d in new[] { 2f, 8f, 20f, 45f }) _levelChecks.Add(Time.unscaledTime + d);
@@ -278,14 +286,18 @@ internal static class Minimap
 
     public static void Draw()
     {
-        if (!Settings.MinimapEnabled.Value || !GameState.InCase || _tex == null || _mapPtr == IntPtr.Zero) return;
+        if ((!Settings.MinimapEnabled.Value && !_big) || !GameState.InCase || _tex == null || _mapPtr == IntPtr.Zero) return;
         Grow();
-        float size = Mathf.Clamp(Settings.MinimapSize.Value, 120f, 600f);
         float viewW = _view.width, viewH = _view.height;
-        float scale = size / Mathf.Max(viewW, viewH);
-        var v = new Rect(Screen.width - viewW * scale - 16, 16, viewW * scale, viewH * scale); // whole view
+        var v = MapRect(viewW, viewH, out float scale); // whole view: the corner, or big in the middle (M)
+        float size = Mathf.Max(v.width, v.height);
         // The maze grid inside the view (grid cell x covers [x, x+1)).
         var r = new Rect(v.x - _view.xMin * scale, v.yMax - (_sizeY - _view.yMin) * scale, _sizeX * scale, _sizeY * scale);
+        if (_big)
+        {
+            DrawBigBackdrop(v);
+            HandleBigClicks(v, r, scale);
+        }
 
         // Grid y grows north; screen y grows down.
         Vector2 ToScreen(Vector2 g) => new(r.x + (g.x + 0.5f) * scale, r.yMax - (g.y + 0.5f) * scale);
@@ -348,6 +360,7 @@ internal static class Minimap
                 DrawTrail(pts, On(col, trail[^1].y), dot);
             }
         }
+        DrawRouteOnMap(g => ToScreen(g), scale);
         if (_end.x >= 0) Dot(ToScreen(_end), Mathf.Max(6f, scale * 1.5f), On(new Color(1f, 0.3f, 0.25f), _origin.y), "S");
         foreach (var (pos, _, id) in CosmeticAlert.PendingTargets())
         {
@@ -418,6 +431,8 @@ internal static class Minimap
             GUI.matrix = saved;
         }
 
+        if (_big) return;
+
         // Who still has to pick up the case cosmetic, under the map (party members with the mod).
         var missing = CosmeticAlert.StillToPickUp();
         float below = v.yMax + 8;
@@ -434,11 +449,19 @@ internal static class Minimap
             GUI.Label(tr, Ui.Caps(text), _note);
             GUI.color = Color.white;
         }
-        if (Settings.MinimapLegend.Value) DrawLegend(Screen.width - 16, below, floor >= 0);
+        if (Settings.MinimapLegend.Value && Time.unscaledTime < _legendUntil)
+            DrawLegend(Screen.width - 16, below, v.width, floor >= 0, Mathf.Clamp01((_legendUntil - Time.unscaledTime) / 0.5f));
     }
 
-    /// <summary>What each mark means, in two columns under the map (F1 > Gameplay turns it off).</summary>
-    private static void DrawLegend(float right, float top, bool floors)
+    // The legend shows for LegendSeconds when a case starts, then hides; TAB brings it back (held: stays up).
+    private const float LegendSeconds = 10f;
+    private static float _legendUntil;
+
+    /// <summary>
+    /// What each mark means, under the map and exactly as wide as it: two columns at the biggest text that fits, one
+    /// column when two would need tiny text. F1 > Gameplay turns it off.
+    /// </summary>
+    private static void DrawLegend(float right, float top, float width, bool floors, float alpha)
     {
         var rows = new List<(string glyph, Color colour, string text)>
         {
@@ -452,7 +475,7 @@ internal static class Minimap
             ("◎", Objectives.Colour, Loc.T("Lugar a alcanzar", "Place to reach")),
             ("X", new Color(1f, 0.6f, 0.15f), Loc.T("Monstruo", "Monster")),
             ("X", new Color(1f, 0.15f, 0.1f), Loc.T("Monstruo persiguiendo", "Monster chasing")),
-            ("S", new Color(1f, 0.3f, 0.25f), Loc.T("Salida", "Exit")),
+            ("S", new Color(1f, 0.3f, 0.25f), "Sexy salida"),
             ("■", new Color(0.3f, 0.95f, 0.45f), Loc.T("Zona segura", "Safe zone")),
             ("■", new Color(0.35f, 0.43f, 0.63f), Loc.T("Landmark", "Landmark")),
         };
@@ -461,29 +484,52 @@ internal static class Minimap
             rows.Add(("▼▲", new Color(0.4f, 0.95f, 1f), Loc.T("Bajada / subida", "Stairs down / up")));
             rows.Add(("●", new Color(1f, 1f, 1f, 0.35f), Loc.T("Tenue: en otro piso", "Faint: on another floor")));
         }
-        // Big enough to read at a glance, on an almost opaque backing so the maze behind doesn't get in the way.
-        _legend ??= new GUIStyle(GUI.skin.label) { fontSize = 22, alignment = TextAnchor.MiddleLeft };
-        _legendGlyph ??= new GUIStyle(GUI.skin.label) { fontSize = 24, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, font = Ui.SymbolFont };
-        const float rowH = 34f, glyphW = 38f, pad = 14f;
-        float textW = 0f;
-        foreach (var row in rows) textW = Mathf.Max(textW, _legend.CalcSize(new GUIContent(Ui.Caps(row.text))).x);
-        float colW = glyphW + 6f + textW + 14f;
-        int perCol = (rows.Count + 1) / 2;
-        var box = new Rect(right - 2 * colW - 2 * pad, top, 2 * colW + 2 * pad, perCol * rowH + 2 * pad);
-        Ui.Fill(box, new Color(0.03f, 0.03f, 0.04f, 0.88f));
+        // As big as the width allows, on an almost opaque backing so the maze behind doesn't get in the way.
+        const float pad = 12f, gap = 12f;
+        float inner = width - 2 * pad;
+        float Need(int size, int cols)
+        {
+            var st = LegendStyle(size);
+            float textW = 0f;
+            foreach (var row in rows) textW = Mathf.Max(textW, st.CalcSize(new GUIContent(Ui.Caps(row.text))).x);
+            return cols * (size * 1.7f + textW) + (cols - 1) * gap;
+        }
+        int cols = 2, size = 22;
+        while (size > 14 && Need(size, 2) > inner) size--;
+        if (Need(size, 2) > inner)
+        {
+            cols = 1;
+            size = 22;
+            while (size > 11 && Need(size, 1) > inner) size--;
+        }
+        var text = LegendStyle(size);
+        _legendGlyph ??= new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, font = Ui.SymbolFont };
+        _legendGlyph.fontSize = size + 2;
+        float rowH = size * 1.55f, glyphW = size * 1.7f, colW = (inner - (cols - 1) * gap) / cols;
+        int perCol = (rows.Count + cols - 1) / cols;
+        var box = new Rect(right - width, top, width, perCol * rowH + 2 * pad);
+        Ui.Fill(box, new Color(0.03f, 0.03f, 0.04f, 0.88f * alpha));
         for (int i = 0; i < rows.Count; i++)
         {
-            var (glyph, colour, text) = rows[i];
-            float x = box.x + pad + (i / perCol) * colW, y = box.y + pad + (i % perCol) * rowH;
-            GUI.color = colour;
+            var (glyph, colour, label) = rows[i];
+            float x = box.x + pad + (i / perCol) * (colW + gap), y = box.y + pad + (i % perCol) * rowH;
+            GUI.color = new Color(colour.r, colour.g, colour.b, colour.a * alpha);
             GUI.Label(new Rect(x, y, glyphW, rowH), glyph, _legendGlyph);
-            GUI.color = new Color(0.95f, 0.95f, 0.93f);
-            GUI.Label(new Rect(x + glyphW + 6, y, colW - glyphW - 6, rowH), Ui.Caps(text), _legend);
+            GUI.color = new Color(0.95f, 0.95f, 0.93f, alpha);
+            GUI.Label(new Rect(x + glyphW, y, colW - glyphW, rowH), Ui.Caps(label), text);
         }
         GUI.color = Color.white;
     }
 
-    private static GUIStyle _legend, _legendGlyph;
+    private static GUIStyle _legendGlyph;
+    private static readonly Dictionary<int, GUIStyle> LegendStyles = new();
+
+    private static GUIStyle LegendStyle(int size)
+    {
+        if (!LegendStyles.TryGetValue(size, out var st))
+            LegendStyles[size] = st = new GUIStyle(GUI.skin.label) { fontSize = size, alignment = TextAnchor.MiddleLeft };
+        return st;
+    }
 
     private static GUIStyle _note, _levelStyle, _nameStyle;
     private static Texture2D _ring;
@@ -657,7 +703,7 @@ internal static class Minimap
         Dot(At(new Vector2Int(DemoN - 2, DemoN - 2)), Mathf.Max(6f, cell), new Color(1f, 0.3f, 0.25f, alpha), "S");
 
         Ui.Text(new Rect(r.x + 8, r.yMax - 28, r.width - 8, 26), Loc.T("Vista previa", "Preview"), Ui.Small, new Color(1f, 1f, 1f, 0.85f));
-        if (Settings.MinimapLegend.Value) DrawLegend(Screen.width - 16, r.yMax + 8, false);
+        if (Settings.MinimapLegend.Value) DrawLegend(Screen.width - 16, r.yMax + 8, r.width, false, 1f);
     }
 
     /// <summary>A 10x10-room maze (fixed seed) and two walks through it.</summary>

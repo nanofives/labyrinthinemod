@@ -104,9 +104,9 @@ internal static class UiSkin
         {
             Graphics.Blit(src, rt, new Vector2(r.width / src.width, r.height / src.height), new Vector2(r.x / src.width, r.y / src.height));
             RenderTexture.active = rt;
-            var t = new Texture2D(w, h, TextureFormat.RGBA32, true) { hideFlags = HideFlags.HideAndDontSave, wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var t = new Texture2D(w, h, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave, wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
             t.ReadPixels(new Rect(0, 0, w, h), 0, 0);
-            t.Apply(true);
+            t.Apply(false); // no mipmaps: lower mips bled across the 9-slice seams
             return t;
         }
         finally
