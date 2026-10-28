@@ -38,24 +38,24 @@ public class Core : MelonMod
 
     public override void OnUpdate()
     {
-        Brightness.HandleHotkeys();
-        CosmeticAlert.Update();
-        Pigman.Update();
-        MonsterAlert.Update();
-        AutoGlowstick.Update();
-        AutoFlashlight.Update();
-        Objectives.Update();
-        Minimap.Update();
-        SelfRevive.Update();
-        Party.Update();
-        Rules.Refresh();
-        CaseBoard.Update();
+        Safe("Brightness.HandleHotkeys", () => Brightness.HandleHotkeys());
+        Safe("CosmeticAlert.Update", () => CosmeticAlert.Update());
+        Safe("Pigman.Update", () => Pigman.Update());
+        Safe("MonsterAlert.Update", () => MonsterAlert.Update());
+        Safe("AutoGlowstick.Update", () => AutoGlowstick.Update());
+        Safe("AutoFlashlight.Update", () => AutoFlashlight.Update());
+        Safe("Objectives.Update", () => Objectives.Update());
+        Safe("Minimap.Update", () => Minimap.Update());
+        Safe("SelfRevive.Update", () => SelfRevive.Update());
+        Safe("Party.Update", () => Party.Update());
+        Safe("Rules.Refresh", () => Rules.Refresh());
+        Safe("CaseBoard.Update", () => CaseBoard.Update());
 #if EXPERIMENTS
-        ForeignPieces.Update();
+        Safe("ForeignPieces.Update", () => ForeignPieces.Update());
 #endif
-        ModelIcons.Update();
-        CollectionViewer.Update();
-        OptionsMenu.Update();
+        Safe("ModelIcons.Update", () => ModelIcons.Update());
+        Safe("CollectionViewer.Update", () => CollectionViewer.Update());
+        Safe("OptionsMenu.Update", () => OptionsMenu.Update());
         if (_learnAt.Count > 0 && Time.unscaledTime >= _learnAt[0])
         {
             _learnAt.RemoveAt(0);
@@ -71,28 +71,47 @@ public class Core : MelonMod
 #if EXPERIMENTS
         if (ForeignPieces.OnSceneLoaded(sceneName)) return; // donor scene of the experiment, loaded and dropped in the lobby
 #endif
-        GameState.OnSceneLoaded();
-        CosmeticAlert.OnSceneLoaded();
-        Pigman.OnSceneLoaded();
-        MonsterAlert.OnSceneLoaded();
-        AutoGlowstick.OnSceneLoaded();
-        AutoFlashlight.OnSceneLoaded();
-        Objectives.OnSceneLoaded();
-        Minimap.OnSceneLoaded();
-        OptionsMenu.OnSceneLoaded();
-        CollectionViewer.OnSceneLoaded();
+        Safe("GameState.OnSceneLoaded", () => GameState.OnSceneLoaded());
+        Safe("CosmeticAlert.OnSceneLoaded", () => CosmeticAlert.OnSceneLoaded());
+        Safe("Pigman.OnSceneLoaded", () => Pigman.OnSceneLoaded());
+        Safe("MonsterAlert.OnSceneLoaded", () => MonsterAlert.OnSceneLoaded());
+        Safe("AutoGlowstick.OnSceneLoaded", () => AutoGlowstick.OnSceneLoaded());
+        Safe("AutoFlashlight.OnSceneLoaded", () => AutoFlashlight.OnSceneLoaded());
+        Safe("Objectives.OnSceneLoaded", () => Objectives.OnSceneLoaded());
+        Safe("Minimap.OnSceneLoaded", () => Minimap.OnSceneLoaded());
+        Safe("OptionsMenu.OnSceneLoaded", () => OptionsMenu.OnSceneLoaded());
+        Safe("CollectionViewer.OnSceneLoaded", () => CollectionViewer.OnSceneLoaded());
         _learnAt.Clear();
         foreach (var delay in new[] { 5f, 15f, 40f }) _learnAt.Add(Time.unscaledTime + delay);
     }
 
     public override void OnGUI()
     {
-        WorldMarker.Draw();
-        Minimap.Draw();
-        CollectionViewer.Draw();
-        OptionsMenu.Draw();
-        CaseBoard.DrawTooltip();
-        Toast.Draw();
+        Safe("WorldMarker.Draw", () => WorldMarker.Draw());
+        Safe("Minimap.Draw", () => Minimap.Draw());
+        Safe("CollectionViewer.Draw", () => CollectionViewer.Draw());
+        Safe("OptionsMenu.Draw", () => OptionsMenu.Draw());
+        Safe("CaseBoard.DrawTooltip", () => CaseBoard.DrawTooltip());
+        Safe("Toast.Draw", () => Toast.Draw());
+    }
+
+    private static readonly System.Collections.Generic.Dictionary<string, string> LastError = new();
+
+    /// <summary>
+    /// Runs one feature's per-frame step so a failure stays in that feature: before this, one exception (e.g. a game
+    /// type missing on an older game build) ended OnUpdate early and Party never published, so the host saw "no tiene
+    /// LabyHelper". Each distinct error is logged once per feature.
+    /// </summary>
+    private static void Safe(string name, System.Action step)
+    {
+        try { step(); }
+        catch (System.Exception e)
+        {
+            string msg = e.GetType().Name + ": " + e.Message;
+            if (LastError.TryGetValue(name, out var last) && last == msg) return;
+            LastError[name] = msg;
+            Log.Error($"{name}: {e}");
+        }
     }
 
     /// <summary>The updater plugin leaves "old new" in UserData\LabyHelper.updated.txt after swapping the DLL.</summary>

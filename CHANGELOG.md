@@ -5,6 +5,11 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Arreglado
+- En un juego sin la expansión egipcia (o con MelonLoader sin regenerar), el mod tiraba error en cada frame y el host
+  veía a ese jugador como "no tiene LabyHelper". Ahora cada función corre aislada (si una falla, las demás siguen y el
+  grupo se sincroniza igual) y lo de la expansión se saltea en ese juego.
+
 ## [0.3.11] - 2026-10-27
 
 ### Jugabilidad

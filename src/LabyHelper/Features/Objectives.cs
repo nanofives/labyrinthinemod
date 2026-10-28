@@ -37,6 +37,33 @@ internal static class Objectives
 
     private static bool InScene(Component c) => c.gameObject.scene.IsValid();
 
+    private static bool _noDlc;
+
+    /// <summary>Egyptian DLC puzzles: the pillars and the scales, plus the weights still lying around for the scales.</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static int AddDlcPuzzles()
+    {
+        int seen = 0;
+        foreach (var p in UnityEngine.Object.FindObjectsOfType<PillarsPuzzle>(true))
+        {
+            if (p == null || !InScene(p)) continue;
+            seen++;
+            if (!p.IsCompleted) Pending.Add(new Clue(p.transform.position, Kind.Zone, Loc.T("pilares", "pillars")));
+        }
+        foreach (var w in UnityEngine.Object.FindObjectsOfType<WeightPuzzle>(true))
+        {
+            if (w == null || !InScene(w)) continue;
+            seen++;
+            if (w.IsCompleted) continue;
+            Pending.Add(new Clue(w.transform.position, Kind.Slot, Loc.T("balanza", "scales")));
+            var weights = w.spawnedObjects;
+            if (weights != null)
+                foreach (var item in weights)
+                    if (item != null) Pending.Add(new Clue(item.transform.position, Kind.Item, Loc.T("pesa", "weight")));
+        }
+        return seen;
+    }
+
     public static void OnSceneLoaded()
     {
         Pending.Clear();
@@ -82,23 +109,16 @@ internal static class Objectives
                 seen++;
                 if (!c.IsCompleted) Pending.Add(new Clue(c.transform.position, Kind.Zone, Clean(c.gameObject.name)));
             }
-            // Egyptian DLC puzzles: the pillars and the scales, plus the weights still lying around for the scales.
-            foreach (var p in UnityEngine.Object.FindObjectsOfType<PillarsPuzzle>(true))
+            if (!_noDlc)
             {
-                if (p == null || !InScene(p)) continue;
-                seen++;
-                if (!p.IsCompleted) Pending.Add(new Clue(p.transform.position, Kind.Zone, Loc.T("pilares", "pillars")));
-            }
-            foreach (var w in UnityEngine.Object.FindObjectsOfType<WeightPuzzle>(true))
-            {
-                if (w == null || !InScene(w)) continue;
-                seen++;
-                if (w.IsCompleted) continue;
-                Pending.Add(new Clue(w.transform.position, Kind.Slot, Loc.T("balanza", "scales")));
-                var weights = w.spawnedObjects;
-                if (weights != null)
-                    foreach (var item in weights)
-                        if (item != null) Pending.Add(new Clue(item.transform.position, Kind.Item, Loc.T("pesa", "weight")));
+                // Their types only exist on game builds with the Egyptian expansion: on an older build the JIT can't
+                // compile the method that uses them, so it lives apart and is switched off after the first failure.
+                try { seen += AddDlcPuzzles(); }
+                catch (Exception e) when (e is TypeLoadException or MissingMethodException or MissingFieldException)
+                {
+                    _noDlc = true;
+                    Core.Log.Msg("Objectives: this game build has no Egyptian expansion puzzles; skipping them.");
+                }
             }
             if (seen != _seen) Core.Log.Msg($"Objectives: {seen} objective object(s) in the scene, {Pending.Count} pending.");
             _seen = seen;

@@ -108,10 +108,25 @@ internal static class Catalog
             // item: a non-music item with that icon isn't a real cosmetic.
             if (item.BodyPart != BodyPart.Music && item.Icon != null && MusicIcons().Contains(item.Icon.Pointer))
                 return Hide(id, "placeholder icon");
-            if (!Il2CppValkoGames.Labyrinthine.DLCManager.IsCosmeticPartOfDLC(id, out var dlc)) return true;
-            return Il2CppValkoGames.Labyrinthine.DLCManager.IsDLCAvailable(dlc);
+            if (_noDlcManager) return true;
+            try { return DlcAvailable(id); }
+            catch (System.Exception e) when (e is System.TypeLoadException or System.MissingMethodException)
+            {
+                _noDlcManager = true; // game build without DLCManager (before the Egyptian expansion): no DLC items
+                return true;
+            }
         }
         catch { return true; /* Steam not ready */ }
+    }
+
+    private static bool _noDlcManager;
+
+    /// <summary>Kept apart: DLCManager only exists on game builds with the Egyptian expansion.</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static bool DlcAvailable(ushort id)
+    {
+        if (!Il2CppValkoGames.Labyrinthine.DLCManager.IsCosmeticPartOfDLC(id, out var dlc)) return true;
+        return Il2CppValkoGames.Labyrinthine.DLCManager.IsDLCAvailable(dlc);
     }
 
     private static readonly HashSet<ushort> HiddenLogged = new();
