@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.13] - 2026-10-27
+
 ### Arreglado
 - La actualización automática fallaba siempre que había una versión nueva (el actualizador cambiaba el tiempo de
   espera de su conexión después de usarla). Por eso nadie pasó de la versión que instaló. Hay que instalar esta versión
