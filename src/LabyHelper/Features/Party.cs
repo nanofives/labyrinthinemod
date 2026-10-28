@@ -36,7 +36,7 @@ internal static class Party
     }
 
     public static List<Member> Members { get; private set; } = new();
-    private static float _nextPublish, _nextRead;
+    private static float _nextPublish, _nextRead, _nextPicks;
     private static string _lastPublished;
     private static int _version;
 
@@ -47,6 +47,11 @@ internal static class Party
     {
         if (!Settings.PartySync.Value) return;
         float now = Time.unscaledTime;
+        if (now >= _nextPicks)
+        {
+            _nextPicks = now + 1f; // the host's picks must be out before a case starts
+            Distribution.PublishHostPicks();
+        }
         if (now >= _nextRead)
         {
             _nextRead = now + ReadEvery;
@@ -241,6 +246,67 @@ internal static class Party
             foreach (var s in parts[1].Split(',', StringSplitOptions.RemoveEmptyEntries))
                 if (ushort.TryParse(s, out var v)) ids.Add(v);
         PickedBy[id.m_SteamID] = (seed, ids);
+    }
+
+    private const string PicksKey = "lh_picks";
+    private static string _lastPicks;
+
+    /// <summary>True when we decide for the lobby: we own it, or there's no Steam lobby (solo).</summary>
+    public static bool IAmHost()
+    {
+        try
+        {
+            var lobby = Lobby();
+            if (lobby == null) return true;
+            return SteamMatchmaking.GetLobbyOwner(lobby.Value).m_SteamID == SteamUser.GetSteamID().m_SteamID;
+        }
+        catch { return true; }
+    }
+
+    /// <summary>
+    /// Host only: the cosmetic each case will drop, "seed:id,..." in lobby member data "lh_picks". Every peer spawns
+    /// its own cosmetic, and computing the pick on each one diverged (pools learned from each player's own games,
+    /// party data arriving at different times), so the host's choice is the one everybody uses.
+    /// </summary>
+    public static void PublishPicks(IEnumerable<KeyValuePair<int, ushort>> picks)
+    {
+        string value = string.Join(",", picks.OrderBy(p => p.Key).Select(p => $"{p.Key}:{p.Value}"));
+        if (value.Length == 0) value = "-";
+        if (value == _lastPicks) return;
+        try
+        {
+            var lobby = Lobby();
+            if (lobby == null) return;
+            SteamMatchmaking.SetLobbyMemberData(lobby.Value, PicksKey, value);
+            _lastPicks = value;
+            Core.Log.Msg($"Party: published picks {value}.");
+        }
+        catch (Exception e) { Core.Log.Warning($"Party: publish picks failed: {e.Message}"); }
+    }
+
+    /// <summary>
+    /// Clients: the host's pick for this case seed. <paramref name="hostDecides"/> is false when the host publishes no
+    /// picks (older version / no mod): then the caller decides locally as before.
+    /// </summary>
+    public static ushort? HostPick(int seed, out bool hostDecides)
+    {
+        hostDecides = false;
+        try
+        {
+            var lobby = Lobby();
+            if (lobby == null) return null;
+            var owner = SteamMatchmaking.GetLobbyOwner(lobby.Value);
+            string value = SteamMatchmaking.GetLobbyMemberData(lobby.Value, owner, PicksKey);
+            if (string.IsNullOrEmpty(value)) return null;
+            hostDecides = true;
+            foreach (var pair in value.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var kv = pair.Split(':');
+                if (kv.Length == 2 && int.TryParse(kv[0], out var s) && s == seed && ushort.TryParse(kv[1], out var id)) return id;
+            }
+        }
+        catch { /* Steam not ready */ }
+        return null;
     }
 
     private const string ChaseKey = "lh_chase";

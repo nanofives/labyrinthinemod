@@ -5,6 +5,14 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Arreglado
+- Mismo cosmético para todos: ahora lo elige el host y lo publica en el lobby; los demás usan esa elección. Antes cada
+  uno lo calculaba con sus propios datos (pools aprendidos en sus partidas, datos del grupo llegando en otro momento) y
+  a veces les salía distinto, aun con la misma versión.
+- "Te persigue A VOS" les salía a todos: el host tomaba como objetivo al primer jugador de la escena cuando el objetivo
+  del monstruo no colgaba del jugador. Ahora toma al jugador que está sobre ese objetivo, y el host publica los
+  objetivos aunque tenga su propio cartel apagado o esté caído.
+
 ## [0.3.14] - 2026-10-27
 
 ### Jugabilidad

@@ -91,11 +91,45 @@ internal static class Distribution
         return assigned != null ? assigned.Where(cand.Contains).ToHashSet() : cand;
     }
 
-    /// <summary>The item this case drops under the rule, as decided in the lobby (null if none or unknown).</summary>
+    /// <summary>
+    /// The item this case drops under the rule (null if none). The lobby host decides and publishes it (Party
+    /// "lh_picks"); everyone else takes the host's pick, since local computations can differ between players.
+    /// </summary>
     public static ushort? Target(Contract c)
     {
+        if (!Party.IAmHost())
+        {
+            var pick = Party.HostPick(c.Seed, out bool hostDecides);
+            if (hostDecides) return pick;
+        }
         Refresh();
         return Targets.TryGetValue(c.Seed, out var t) ? t : null;
+    }
+
+    /// <summary>Clients follow the host: true when the host publishes picks and has none for this case.</summary>
+    public static bool HostSaysNone(Contract c)
+        => !Party.IAmHost() && Party.HostPick(c.Seed, out bool hostDecides) == null && hostDecides;
+
+    /// <summary>
+    /// Host: publishes the picks of the board's cases plus the case currently chosen (custom cases aren't on the
+    /// board), so the other players spawn the same item. Called from Party every read cycle.
+    /// </summary>
+    public static void PublishHostPicks()
+    {
+        if (!Party.IAmHost() || !Rules.Active || !Rules.OnlyNew) return;
+        Refresh();
+        var picks = new Dictionary<int, ushort>(Targets);
+        try
+        {
+            var c = Il2Cpp.GameValues.instance?.RandomMazeContract;
+            if (c != null && !picks.ContainsKey(c.Seed))
+            {
+                var allowed = Allowed(c);
+                if (allowed.Count > 0) picks[c.Seed] = RandomCaseRule.PickTarget(c, allowed);
+            }
+        }
+        catch { /* not in the lobby */ }
+        Party.PublishPicks(picks);
     }
 
     /// <summary>Recomputes the assignment if the board, party or rules changed (no-op otherwise).</summary>

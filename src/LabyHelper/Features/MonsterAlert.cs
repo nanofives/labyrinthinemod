@@ -23,11 +23,17 @@ internal static class MonsterAlert
     private static float _next;
     private static readonly Dictionary<IntPtr, string> Names = new();
 
-    public static void OnSceneLoaded() => Names.Clear();
+    private static readonly HashSet<string> LoggedTargets = new();
+
+    public static void OnSceneLoaded()
+    {
+        Names.Clear();
+        LoggedTargets.Clear();
+    }
 
     public static void Update()
     {
-        if (!Settings.MonsterChaseAlert.Value || Time.unscaledTime < _next) return;
+        if (!GameState.InCase || Time.unscaledTime < _next) return;
         _next = Time.unscaledTime + Every;
         try
         {
@@ -39,7 +45,7 @@ internal static class MonsterAlert
                 if (p.isLocalPlayer) me = p;
                 else if (!p.isDead) others.Add(p.transform.position);
             }
-            if (me == null || me.isDead) return;
+            if (me == null) return; // the host keeps publishing targets even with its own banner off or while downed
             Vector3 mine = me.transform.position;
 
             // Real targets: computed here when we're the host, read from the host's lobby data otherwise. Null when the
@@ -63,7 +69,7 @@ internal static class MonsterAlert
                 chasing.Add(charging ? Loc.T($"{name} (cargando)", $"{name} (charging)") : name);
             }
             if (host) Party.PublishChase(targets.Count == 0 ? "-" : string.Join(",", targets.Select(kv => $"{kv.Key}:{kv.Value}")));
-            if (chasing.Count == 0) return;
+            if (chasing.Count == 0 || me.isDead || !Settings.MonsterChaseAlert.Value) return;
 
             var list = chasing.GroupBy(n => n).Select(g => g.Count() > 1 ? $"{g.Count()}x {g.Key}" : g.Key).ToList();
             string who = string.Join(", ", list);
@@ -89,8 +95,24 @@ internal static class MonsterAlert
             var ai = sync.GetComponent<AIController>() ?? sync.transform.root.GetComponentInChildren<AIController>(true);
             var go = ai?.Target?.Value;
             if (go == null) return null;
-            var player = go.GetComponentInParent<Il2Cpp.PlayerNetworkSync>() ?? go.transform.root.GetComponentInChildren<Il2Cpp.PlayerNetworkSync>();
-            return player != null ? player.netId : null;
+            // The target is the player's object or something on it (a look-at point...). Its own hierarchy first;
+            // otherwise the player standing on it. Never "the first player under the same root": players can share
+            // one, which named the host as the target of every chase.
+            var player = go.GetComponentInParent<Il2Cpp.PlayerNetworkSync>();
+            if (player == null)
+            {
+                float best = 4f;
+                foreach (var p in UnityEngine.Object.FindObjectsOfType<Il2Cpp.PlayerNetworkSync>())
+                {
+                    if (p == null) continue;
+                    float d = Vector3.Distance(p.transform.position, go.transform.position);
+                    if (d < best) { best = d; player = p; }
+                }
+            }
+            if (player == null) return null;
+            string key = $"{sync.netId}>{player.netId}";
+            if (LoggedTargets.Add(key)) Core.Log.Msg($"MonsterAlert: {NameOf(sync)} chases netId {player.netId} (target object '{go.name}').");
+            return player.netId;
         }
         catch { return null; }
     }

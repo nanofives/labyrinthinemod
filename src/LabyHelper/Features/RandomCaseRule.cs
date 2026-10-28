@@ -63,7 +63,7 @@ internal static class RandomCaseRule
             var c = Current();
             if (c == null || __instance?.chanceForItem == null) return;
             PoolCache.LearnFromScene(); // capture chanceForItem/seasonal before we touch them
-            if (!Applies(c) || (Distribution.Target(c) == null && Distribution.Allowed(c).Count == 0)) return;
+            if (!Applies(c) || Distribution.HostSaysNone(c) || (Distribution.Target(c) == null && Distribution.Allowed(c).Count == 0)) return;
 
             _savedIndex = (int)c.ContractType;
             _savedChance = __instance.chanceForItem[_savedIndex];
@@ -86,8 +86,13 @@ internal static class RandomCaseRule
         {
             var c = Current();
             if (__instance == null || !Applies(c)) return;
+            if (Distribution.HostSaysNone(c))
+            {
+                Core.Log.Msg("RandomCaseRule: the host has no pick for this case; game picks as usual.");
+                return;
+            }
             var allowed = Distribution.Allowed(c);
-            var frozen = Distribution.Target(c);
+            var frozen = Distribution.Target(c); // the host's pick when we aren't the host
             if (frozen == null && allowed.Count == 0)
             {
                 Core.Log.Msg("RandomCaseRule: nothing new left for this case; game picks as usual.");
