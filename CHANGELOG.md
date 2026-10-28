@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.12] - 2026-10-27
+
 ### Arreglado
 - En un juego sin la expansión egipcia (o con MelonLoader sin regenerar), el mod tiraba error en cada frame y el host
   veía a ese jugador como "no tiene LabyHelper". Ahora cada función corre aislada (si una falla, las demás siguen y el
