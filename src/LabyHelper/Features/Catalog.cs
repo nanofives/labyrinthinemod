@@ -131,16 +131,18 @@ internal static class Catalog
 
     /// <summary>
     /// Items the case rule may spawn even though no case pool has them (store, level rewards, limited...): real items
-    /// with a model, not music (nothing to show on the floor), not the Egyptian DLC (a player without it would get a
-    /// broken pickup; those still drop on the Egypt maps), not the ones known to have no model.
+    /// with a model or music tracks (carried by a music pickup), not the ones known to have no model. Egyptian DLC items
+    /// only when <paramref name="dlcOk"/> (everyone in the lobby owns the DLC: each player spawns the same item, and
+    /// one without the DLC would get a broken pickup).
     /// </summary>
-    public static bool Spawnable(ushort id)
+    public static bool Spawnable(ushort id, bool dlcOk)
     {
         try
         {
             var item = ItemById(id);
             if (item == null || !CustomizationItemExtensions.IsValid(item)) return false;
-            if (item.BodyPart == BodyPart.Music || item.ItemRarity == ItemRarity.DLC_Egyptian) return false;
+            if (item.ItemRarity == ItemRarity.DLC_Egyptian && !dlcOk) return false;
+            if (item.BodyPart == BodyPart.Music) return true; // the music tracks share one generic icon
             if (item.Icon != null && MusicIcons().Contains(item.Icon.Pointer)) return false; // unfinished placeholder
             return !BrokenItems.IsBroken(id);
         }

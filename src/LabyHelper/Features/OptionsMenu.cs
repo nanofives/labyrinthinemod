@@ -137,6 +137,7 @@ internal static class OptionsMenu
         Toggle(ref cy, cw, Loc.T("Repartir los nuevos entre las 4 carpetas", "Spread new items across the 4 case files"), Settings.DistributeAcrossCases);
         Toggle(ref cy, cw, Loc.T("Carpetas siempre con sello (azul o HARDCORE si falta alguno)", "Case files always sealed (blue, or HARDCORE while one is missing)"), Settings.BoardOnlySealed);
         Toggle(ref cy, cw, Loc.T("Carpetas de tamaño mediano a muy chico", "Case files medium to very small"), Settings.SmallMapsOnly);
+        Toggle(ref cy, cw, Loc.T("Más mapas egipcios si todos tienen el DLC", "More Egypt maps if everyone owns the DLC"), Settings.MoreDlcMaps);
         Toggle(ref cy, cw, Loc.T("Sincronizar con los jugadores (necesitan el mod)", "Sync with other players (they need the mod)"), Settings.PartySync);
 
         Section(ref cy, cw, Loc.T("Variedad de mapa (casos random, todos con el mod)", "Map variety (random cases, everyone modded)"));

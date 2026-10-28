@@ -5,6 +5,13 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Jugabilidad
+- Tablero de casos (host): si todos en el lobby tienen el DLC egipcio, los mapas egipcios salen 4 veces más seguido.
+  Cada jugador con el mod avisa en el lobby si tiene el DLC (chequeo del propio juego); quien no tiene el mod cuenta
+  como que no lo tiene. No desbloquea nada. Se apaga en F1 > Dificultad.
+- El pool ampliado suma la música que no sale de casos (la trae un pickup de música del juego, con la canción
+  cambiada) y, si todos en el lobby tienen el DLC egipcio, sus cosméticos y canciones.
+
 ## [0.3.16] - 2026-10-28
 
 ### Jugabilidad

@@ -183,6 +183,7 @@ internal static class Party
             // Presence marker, so the host knows we run the mod before our owned list is ready. The rules key is
             // written only by the lobby owner (Agreed), with its on/off decision.
             SteamMatchmaking.SetLobbyMemberData(lobby.Value, VersionKey, BuildInfo.Version);
+            SteamMatchmaking.SetLobbyMemberData(lobby.Value, DlcKey, HaveEgyptDlc() ? "1" : "0");
             var owned = PoolBoost.OwnedIds().ToList();
             if (owned.Count == 0) return; // collection/save not loaded yet: don't tell the lobby we own nothing
             string value = Encode(owned);
@@ -246,6 +247,38 @@ internal static class Party
             foreach (var s in parts[1].Split(',', StringSplitOptions.RemoveEmptyEntries))
                 if (ushort.TryParse(s, out var v)) ids.Add(v);
         PickedBy[id.m_SteamID] = (seed, ids);
+    }
+
+    private const string DlcKey = "lh_dlc";
+
+    /// <summary>Whether we own the Egyptian DLC (the game's own check), false on builds without it.</summary>
+    public static bool HaveEgyptDlc()
+    {
+        try { return HaveEgyptDlcCore(); }
+        catch { return false; }
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static bool HaveEgyptDlcCore() => Il2CppValkoGames.Labyrinthine.DLCManager.HasEgyptianDLC;
+
+    /// <summary>Every lobby member reported owning the Egyptian DLC (members without the mod can't, so they count as no).</summary>
+    public static bool EveryoneHasEgyptDlc()
+    {
+        if (!HaveEgyptDlc()) return false;
+        try
+        {
+            var lobby = Lobby();
+            if (lobby == null) return true;
+            ulong me = SteamUser.GetSteamID().m_SteamID;
+            int n = SteamMatchmaking.GetNumLobbyMembers(lobby.Value);
+            for (int i = 0; i < n; i++)
+            {
+                var id = SteamMatchmaking.GetLobbyMemberByIndex(lobby.Value, i);
+                if (id.m_SteamID != me && SteamMatchmaking.GetLobbyMemberData(lobby.Value, id, DlcKey) != "1") return false;
+            }
+            return true;
+        }
+        catch { return false; }
     }
 
     private const string PicksKey = "lh_picks";

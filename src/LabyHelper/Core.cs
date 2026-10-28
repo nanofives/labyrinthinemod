@@ -30,6 +30,7 @@ public class Core : MelonMod
         BrokenItems.Apply(HarmonyInstance);
         BoardSeals.Apply(HarmonyInstance);
         MapSizeCap.Apply(HarmonyInstance);
+        DlcMaps.Apply(HarmonyInstance);
         RandomCaseRule.Apply(HarmonyInstance);
         MapVariety.Apply(HarmonyInstance);
 #if EXPERIMENTS

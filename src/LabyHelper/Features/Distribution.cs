@@ -62,7 +62,8 @@ internal static class Distribution
     /// <summary>
     /// Every item any random case of this kind can drop once RandomCaseRule may swap a pickup's itemID: all maps'
     /// pools (normal or hardcore) plus the seasonal pools for non-hardcore cases, and with "every cosmetic" on, every
-    /// other spawnable item (store, level rewards, limited...) for non-hardcore cases.
+    /// other spawnable item (store, level rewards, limited, music; the Egyptian DLC when everyone owns it) for
+    /// non-hardcore cases.
     /// </summary>
     public static HashSet<ushort> Obtainable(bool hardcore)
     {
@@ -73,8 +74,9 @@ internal static class Distribution
         if (!hardcore && Settings.PoolEverything.Value)
         {
             var inHardcore = Obtainable(hardcore: true); // hardcore-only items stay hardcore
+            bool dlcOk = Party.EveryoneHasEgyptDlc();
             foreach (var id in Catalog.AllIds())
-                if (!inHardcore.Contains(id) && Catalog.Spawnable(id)) set.Add(id);
+                if (!inHardcore.Contains(id) && Catalog.Spawnable(id, dlcOk)) set.Add(id);
         }
         set.Remove(0xFFFF);
         return set;

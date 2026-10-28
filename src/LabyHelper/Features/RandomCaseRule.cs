@@ -122,7 +122,11 @@ internal static class RandomCaseRule
             else
             {
                 // Not loaded in this map: spawn a pickup that loads its model from the item ID, then swap the ID.
-                var carrier = loaded.OrderBy(kv => kv.Key).Select(kv => kv.Value).FirstOrDefault(LoadsModel);
+                // Music has no model: a music pickup (the game's own, generic for every track) carries it instead.
+                bool music = IsMusic(target);
+                var carrier = loaded.OrderBy(kv => kv.Key)
+                    .Where(kv => !music || IsMusic(kv.Key)).Select(kv => kv.Value)
+                    .FirstOrDefault(wp => music || LoadsModel(wp));
                 if (carrier == null)
                 {
                     Core.Log.Msg("RandomCaseRule: no model-loading pickup in this map to carry a foreign item; game picks as usual.");
@@ -205,6 +209,8 @@ internal static class RandomCaseRule
         }
         return items[^1].id;
     }
+
+    private static bool IsMusic(ushort id) => Catalog.ItemById(id)?.BodyPart == BodyPart.Music;
 
     private static bool LoadsModel(WeightedPrefab wp)
     {

@@ -29,6 +29,7 @@ internal static class Settings
     public static MelonPreferences_Entry<bool> AutoUpdate;
     public static MelonPreferences_Entry<bool> BoardOnlySealed;
     public static MelonPreferences_Entry<bool> SmallMapsOnly;
+    public static MelonPreferences_Entry<bool> MoreDlcMaps;
     public static MelonPreferences_Entry<bool> CosmeticPanelOnByDefault;
     public static MelonPreferences_Entry<float> AutoGlowstickSeconds;
     public static MelonPreferences_Entry<bool> MinimapEnabled;
@@ -86,6 +87,8 @@ internal static class Settings
             description: "Como host: todos los casos random del tablero salen con sello (azul o HARDCORE). HARDCORE solo mientras a alguien del grupo le falte un cosmetico HARDCORE.");
         SmallMapsOnly = _cat.CreateEntry("SmallMapsOnly", true,
             description: "Como host: las carpetas random del tablero salen de tamano mediano, chico o muy chico (Grande -> Muy chico, Muy grande -> Chico, Gigante -> Mediano).");
+        MoreDlcMaps = _cat.CreateEntry("MoreDlcMaps", true,
+            description: "Como host: si todos en el lobby tienen el DLC egipcio, los mapas egipcios salen 4 veces mas seguido en el tablero.");
         AutoUpdate = _cat.CreateEntry("AutoUpdate", true,
             description: "Al abrir el juego, baja la ultima version de GitHub antes de cargar el mod (plugin LabyHelper.Updater).");
         CosmeticPanelOnByDefault = _cat.CreateEntry("CosmeticPanelOnByDefault", true,
