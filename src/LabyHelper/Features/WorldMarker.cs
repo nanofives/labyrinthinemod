@@ -49,9 +49,9 @@ internal static class WorldMarker
             if (sprite != null) Toast.DrawItemIcon(new Rect(x - icon / 2, rect.y - icon - 2, icon, icon), sprite, frame);
 
             GUI.color = Color.black;
-            GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), label, _style);
+            GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), Ui.Caps(label), _style);
             GUI.color = new Color(0.35f, 0.69f, 1f);
-            GUI.Label(rect, label, _style);
+            GUI.Label(rect, Ui.Caps(label), _style);
             GUI.color = Color.white;
         }
 
@@ -82,9 +82,9 @@ internal static class WorldMarker
             string label = offscreen ? $"{Arrow(x, y)} {name}\n{meters:0} m{todo}" : $"▼ {name}\n{meters:0} m{todo}";
             var rect = new Rect(x - 150, y - 25, 300, 50);
             GUI.color = Color.black;
-            GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), label, _style);
+            GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), Ui.Caps(label), _style);
             GUI.color = p.Dead ? DownColor : Players.ColourOf(p.Name);
-            GUI.Label(rect, label, _style);
+            GUI.Label(rect, Ui.Caps(label), _style);
             GUI.color = Color.white;
         }
     }
@@ -101,9 +101,9 @@ internal static class WorldMarker
             string label = $"{Objectives.Glyph(c.Kind)} {c.Label}  {Vector3.Distance(camPos, c.Pos):0} m";
             var rect = new Rect(sp.x - 130, Screen.height - sp.y - 12, 260, 24);
             GUI.color = Color.black;
-            GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width, rect.height), label, _small);
+            GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width, rect.height), Ui.Caps(label), _small);
             GUI.color = Objectives.Colour;
-            GUI.Label(rect, label, _small);
+            GUI.Label(rect, Ui.Caps(label), _small);
             GUI.color = Color.white;
         }
     }
@@ -128,9 +128,9 @@ internal static class WorldMarker
         string label = offscreen ? $"{Arrow(x, y)} {name}\n{meters:0} m" : $"● {name}\n{meters:0} m";
         var rect = new Rect(x - 150, y - 25, 300, 50);
         GUI.color = Color.black;
-        GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), label, _style);
+        GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), Ui.Caps(label), _style);
         GUI.color = ExitColor;
-        GUI.Label(rect, label, _style);
+        GUI.Label(rect, Ui.Caps(label), _style);
         GUI.color = Color.white;
     }
 

@@ -29,9 +29,8 @@ cualquier error deja la versión instalada. Desactivar: crear `UserData/LabyHelp
 | F7 / F8 | Exposición -/+ (0.25 EV) |
 | Shift+F7 / Shift+F8 | Gamma -/+ (0.05) |
 | F9 | Cosmético del caso con distancia y dirección, más los exclusivos posibles del mapa y dónde están los otros jugadores. Es un toggle: queda en pantalla (distancia actualizada) con el marcador sobre el cosmético, visible a través de paredes, hasta volver a apretar F9 |
-| F1 | Opciones LabyHelper: todas las opciones; la dificultad solo se apaga acá (también botón en la pantalla de opciones del juego) |
-| F2 | Colección: tengo / faltan, tradicionales y HARDCORE (también botón en el menú de cosméticos) |
-| F4 | Minimapa fijo arriba a la derecha (durante los casos) |
+| F1 | Opciones LabyHelper, en cualquier momento: todas las opciones en pestañas; la dificultad y el minimapa solo se cambian acá (también botón en la pantalla de opciones del juego). General trae "Forzar actualización" y "Reiniciar el juego" |
+| F2 | Colección: tengo / faltan, tradicionales y HARDCORE, en cualquier momento (también botón en el menú de cosméticos) |
 | F5 | Estando caído, te levanta al instante (si "Levantarse solo" está activo en F1) |
 | F10 | Cicla el evento de temporada forzado: Off, Random, Halloween, Christmas, Easter, Valentines, StPatrick, Summer |
 

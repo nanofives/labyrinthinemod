@@ -5,13 +5,12 @@ namespace LabyHelper.Features;
 
 /// <summary>
 /// Strip across the top of the screen with one key cap per F key and what it does, lit when that feature is on.
-/// Drawn by OptionsMenu wherever F1 works (lobby, a case's safe zones, and while the panel is open). In a case it
+/// Drawn by OptionsMenu in the lobby, in a case's safe zones and while a panel is open, in the game's brush style. In a case it
 /// stays clear of the minimap and wraps into more rows if needed.
 /// </summary>
 internal static class HotkeyBar
 {
     private static GUIStyle _key, _label;
-    private static Texture2D _keyBg, _keyOn, _barBg;
 
     private record Entry(string Key, string Label, bool? On);
 
@@ -19,34 +18,37 @@ internal static class HotkeyBar
     {
         new("F1", Loc.T("Opciones", "Options"), null),
         new("F2", Loc.T("Colección", "Collection"), null),
-        new("F4", Loc.T("Minimapa", "Minimap"), Settings.MinimapEnabled.Value),
         new("F6", Loc.T("Brillo", "Brightness"), Settings.BrightnessEnabled.Value),
         new("F7/F8", Loc.T("Exposición -/+", "Exposure -/+"), null),
         new("F9", Loc.T("Cosmético y jugadores", "Cosmetic and players"), CosmeticAlert.Pinned),
     };
 
+    private static Font _font;
+
     /// <summary>Draws the bar from y = top; returns its bottom edge.</summary>
     public static float Draw(float top)
     {
-        _key ??= new GUIStyle(GUI.skin.label) { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-        _label ??= new GUIStyle(GUI.skin.label) { fontSize = 26, alignment = TextAnchor.MiddleLeft };
-        _keyBg ??= Solid(new Color(0.85f, 0.85f, 0.88f, 1f));
-        _keyOn ??= Solid(new Color(0.45f, 0.85f, 0.5f, 1f));
-        _barBg ??= Solid(new Color(0.05f, 0.05f, 0.07f, 0.8f));
+        if (_key == null || _font != UiSkin.Font)
+        {
+            _font = UiSkin.Font;
+            _key = new GUIStyle(Ui.Bold) { fontSize = 26, alignment = TextAnchor.MiddleCenter };
+            _label = new GUIStyle(Ui.Label) { fontSize = 26, alignment = TextAnchor.MiddleLeft };
+        }
 
-        const float h = 48f, gap = 28f, pad = 16f; // twice the original size (by request)
+        const float h = 48f, gap = 34f, pad = 40f; // twice the original size (by request)
         // Keep clear of the minimap (top right) during a case.
-        float reserved = GameState.InCase && Settings.MinimapEnabled.Value ? Mathf.Clamp(Settings.MinimapSize.Value, 120f, 600f) + 40f : 16f;
-        float maxW = Mathf.Max(300f, Screen.width - 2f * reserved);
+        // The minimap is drawn in real pixels; this bar in the panels' scaled layout.
+        float reserved = GameState.InCase && Settings.MinimapEnabled.Value ? (Mathf.Clamp(Settings.MinimapSize.Value, 120f, 600f) + 40f) / Ui.Scale : 16f;
+        float maxW = Mathf.Max(300f, Ui.W - 2f * reserved);
 
         // Lay the entries out in rows that fit maxW.
         var rows = new List<List<(Entry e, float kw, float lw)>> { new() };
         float rowW = 0f;
         foreach (var e in Entries())
         {
-            float kw = _key.CalcSize(new GUIContent(e.Key)).x + 24f;
-            float lw = _label.CalcSize(new GUIContent(e.Label)).x + 2f;
-            float w = kw + 10f + lw;
+            float kw = _key.CalcSize(new GUIContent(e.Key)).x + 34f;
+            float lw = _label.CalcSize(new GUIContent(Ui.Caps(e.Label))).x + 2f;
+            float w = kw + 12f + lw;
             if (rows[^1].Count > 0 && rowW + gap + w > maxW - 2 * pad) { rows.Add(new()); rowW = 0f; }
             rowW += (rows[^1].Count > 0 ? gap : 0f) + w;
             rows[^1].Add((e, kw, lw));
@@ -56,31 +58,21 @@ internal static class HotkeyBar
         foreach (var row in rows)
         {
             float w = 0f;
-            foreach (var (_, kw, lw) in row) w += (w > 0 ? gap : 0f) + kw + 10f + lw;
-            float x = Screen.width / 2f - w / 2f;
-            GUI.DrawTexture(new Rect(x - pad, y, w + 2 * pad, h + 16f), _barBg);
+            foreach (var (_, kw, lw) in row) w += (w > 0 ? gap : 0f) + kw + 12f + lw;
+            float x = Ui.W / 2f - w / 2f;
+            // Black brush strip behind the row, like the game's crossplay and name tags.
+            Ui.Stroke(new Rect(x - pad, y - 2f, w + 2 * pad, h + 20f), new Color(Ui.Ink.r, Ui.Ink.g, Ui.Ink.b, 0.85f), 1f, alt: true);
             foreach (var (e, kw, lw) in row)
             {
+                // Key cap: a white brush dab when the feature is on, grey otherwise.
                 var keyRect = new Rect(x, y + 8f, kw, h);
-                GUI.DrawTexture(keyRect, e.On == true ? _keyOn : _keyBg);
-                var prev = GUI.color;
-                GUI.color = new Color(0.08f, 0.08f, 0.1f);
-                GUI.Label(keyRect, e.Key, _key);
-                GUI.color = e.On == false ? new Color(0.65f, 0.65f, 0.65f) : Color.white;
-                GUI.Label(new Rect(x + kw + 10f, y + 8f, lw, h), e.Label, _label);
-                GUI.color = prev;
-                x += kw + 10f + lw + gap;
+                Ui.Stroke(keyRect, e.On == false ? new Color(0.55f, 0.55f, 0.55f, 1f) : e.On == true ? Ui.Paper : new Color(0.82f, 0.82f, 0.8f, 1f));
+                Ui.Text(keyRect, e.Key, _key, Ui.Ink);
+                Ui.Text(new Rect(x + kw + 12f, y + 8f, lw, h), e.Label, _label, e.On == false ? Ui.Dim : Ui.Paper);
+                x += kw + 12f + lw + gap;
             }
             y += h + 16f;
         }
         return y;
-    }
-
-    private static Texture2D Solid(Color c)
-    {
-        var t = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
-        t.SetPixel(0, 0, c);
-        t.Apply();
-        return t;
     }
 }

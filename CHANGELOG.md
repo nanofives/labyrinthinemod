@@ -5,6 +5,36 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Interfaz
+- El panel de opciones (F1), la colección (F2) y la barra de teclas usan el estilo del juego: su fuente (Larke Sans),
+  sus paneles de borde irregular y los trazos de pincel blancos que se llenan al pasar el mouse, como en el menú
+  principal. Todo el texto del mod va en mayúsculas y sin tildes. Los paneles son semi-transparentes y se agrandan
+  con la resolución (en 1440p, un tercio más grandes).
+- F1 tiene pestañas (General, Dificultad, Mapa, Cosméticos, Avisos, Tablero, Imagen, Partida) y es más ancho.
+  Interruptores tipo crossplay del juego, sliders con perilla de pincel y flechas grandes para elegir entre opciones.
+- F1 y F2 se abren en cualquier momento, también en medio de un caso fuera de las zonas seguras.
+- F1 > General: botón "Forzar actualización" (baja la última versión de GitHub aunque sea la misma, cierra el juego,
+  la instala y lo vuelve a abrir por Steam) y botón "Reiniciar el juego". Los dos piden confirmación.
+- Vista previa de las opciones gráficas: el minimapa con su tamaño, leyenda y recorrido real en la esquina mientras
+  pasás el mouse por esas opciones, el aviso del cosmético a la altura elegida, el cartel de persecución, un degradé
+  con y sin el brillo extra, y una carpeta del tablero con el post-it al tamaño elegido.
+
+### Información (no cambia la jugabilidad)
+- Minimapa: recorrido de cada jugador, una línea de su color (vos en amarillo) que se desvanece hacia atrás, con los
+  últimos ~200 m. Se apaga en F1 > Partida.
+- Minimapa: un cono de visión desde cada jugador (vos incluido) muestra hacia dónde mira, en su color.
+- Minimapa: la leyenda es más grande y va sobre un fondo casi opaco. Se apaga en F1 > Partida.
+- El minimapa ya no se prende ni apaga con F4: solo desde F1 > Partida.
+
+- Póster en la pared más cercana al cosmético del caso (hasta 6 m), con marco, a la altura de los ojos. Se ilumina como
+  las paredes (linterna). Solo lo ve quien tiene el mod. `UserData\LabyHelper.poster.png` cambia la imagen. Se apaga en
+  F1 > Avisos.
+
+### Jugabilidad
+- Vidas infinitas (host): el botón de vidas infinitas del lobby se prende solo, así cada caso que elegís arranca con
+  vidas infinitas. Si lo apagás con el botón del juego, vuelve a prenderse al elegir otro caso. Se apaga en
+  F1 > Partida.
+
 ## [0.3.17] - 2026-10-28
 
 ### Jugabilidad

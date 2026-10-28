@@ -36,11 +36,13 @@ public class Core : MelonMod
 #if EXPERIMENTS
         ForeignPieces.Apply(HarmonyInstance);
 #endif
-        Log.Msg("Loaded. F6 brillo on/off, F7/F8 exposicion -/+, Shift+F7/F8 gamma -/+, F9 cosmetico del caso, F2 coleccion, F4 minimapa, F1 opciones.");
+        Log.Msg("Loaded. F6 brillo on/off, F7/F8 exposicion -/+, Shift+F7/F8 gamma -/+, F9 cosmetico del caso, F2 coleccion, F1 opciones.");
     }
 
     public override void OnUpdate()
     {
+        Safe("UiSkin.Update", () => UiSkin.Update());
+        Safe("GameRestart.Update", () => GameRestart.Update());
         Safe("Brightness.HandleHotkeys", () => Brightness.HandleHotkeys());
         Safe("CosmeticAlert.Update", () => CosmeticAlert.Update());
         Safe("Pigman.Update", () => Pigman.Update());
@@ -59,6 +61,8 @@ public class Core : MelonMod
         Safe("ModelIcons.Update", () => ModelIcons.Update());
         Safe("CollectionViewer.Update", () => CollectionViewer.Update());
         Safe("OptionsMenu.Update", () => OptionsMenu.Update());
+        Safe("InfiniteLives.Update", () => InfiniteLives.Update());
+        Safe("Poster.Update", () => Poster.Update());
         if (_learnAt.Count > 0 && Time.unscaledTime >= _learnAt[0])
         {
             _learnAt.RemoveAt(0);
@@ -82,6 +86,8 @@ public class Core : MelonMod
         Safe("AutoFlashlight.OnSceneLoaded", () => AutoFlashlight.OnSceneLoaded());
         Safe("Objectives.OnSceneLoaded", () => Objectives.OnSceneLoaded());
         Safe("Minimap.OnSceneLoaded", () => Minimap.OnSceneLoaded());
+        Safe("Poster.OnSceneLoaded", () => Poster.OnSceneLoaded());
+        Safe("InfiniteLives.OnSceneLoaded", () => InfiniteLives.OnSceneLoaded());
         Safe("OptionsMenu.OnSceneLoaded", () => OptionsMenu.OnSceneLoaded());
         Safe("CollectionViewer.OnSceneLoaded", () => CollectionViewer.OnSceneLoaded());
         _learnAt.Clear();
@@ -89,6 +95,16 @@ public class Core : MelonMod
     }
 
     public override void OnGUI()
+    {
+        // Every label of the mod in the game's menu font (styles with no font of their own use the skin's).
+        var skinFont = GUI.skin.font;
+        Ui.SymbolFont ??= skinFont;
+        if (UiSkin.Font != null) GUI.skin.font = UiSkin.Font;
+        try { DrawGui(); }
+        finally { GUI.skin.font = skinFont; }
+    }
+
+    private static void DrawGui()
     {
         Safe("WorldMarker.Draw", () => WorldMarker.Draw());
         Safe("Minimap.Draw", () => Minimap.Draw());

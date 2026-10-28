@@ -9,7 +9,7 @@ namespace LabyHelper.Features;
 /// </summary>
 internal static class Players
 {
-    public record Other(Vector3 Pos, string Name, bool Dead);
+    public record Other(Vector3 Pos, string Name, bool Dead, Vector3 Look);
 
     // Distinct, readable on the dark minimap; none of them the monsters' orange/red or the cosmetic's blue.
     private static readonly Color[] Colours =
@@ -71,23 +71,42 @@ internal static class Players
         return owner == null ? null : (_plate.GetValue(owner) as Il2CppTMPro.TMP_Text)?.text;
     }
 
+    private static readonly List<Il2Cpp.PlayerNetworkSync> Syncs = new();
+    private static float _nextFind;
+
+    /// <summary>
+    /// The other players: position, name, down or not and where they look (PlayerNetworkSync.LookDirection, synced; the
+    /// body's forward when it's empty). The player objects are looked up every 2 s; their state is read 10 times a
+    /// second so the minimap's view cones follow smoothly.
+    /// </summary>
     public static List<Other> Others()
     {
         if (Time.unscaledTime < _next) return Cache;
-        _next = Time.unscaledTime + 0.5f;
+        _next = Time.unscaledTime + 0.1f;
         Cache.Clear();
         try
         {
-            int n = 0;
-            foreach (var p in Object.FindObjectsOfType<Il2Cpp.PlayerNetworkSync>())
+            if (Time.unscaledTime >= _nextFind)
             {
-                if (p == null || p.isLocalPlayer) continue;
+                _nextFind = Time.unscaledTime + 2f;
+                Syncs.Clear();
+                foreach (var p in Object.FindObjectsOfType<Il2Cpp.PlayerNetworkSync>())
+                    if (p != null && !p.isLocalPlayer) Syncs.Add(p);
+            }
+            int n = 0;
+            foreach (var p in Syncs)
+            {
+                if (p == null || p.WasCollected) continue;
                 n++;
                 string name = null;
                 try { name = NameOf(p); }
                 catch { /* nameplate not ready */ }
                 if (string.IsNullOrWhiteSpace(name)) name = Loc.T($"Jugador {n}", $"Player {n}");
-                Cache.Add(new Other(p.transform.position, name.Trim(), p.isDead));
+                Vector3 look = Vector3.zero;
+                try { look = p.LookDirection; }
+                catch { /* older game build */ }
+                if (new Vector2(look.x, look.z).sqrMagnitude < 0.01f) look = p.transform.forward;
+                Cache.Add(new Other(p.transform.position, name.Trim(), p.isDead, look));
             }
         }
         catch { /* not in a match */ }

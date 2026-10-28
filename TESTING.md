@@ -60,7 +60,7 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 
 ## Minimapa y glowsticks
 - [ ] En un caso: minimapa arriba a la derecha, el laberinto coincide con lo que recorrés; tu flecha gira con la cámara.
-- [ ] Otros jugadores (verde), cosmético (azul) y salida (S roja) en el lugar correcto. F4 lo oculta y lo vuelve a mostrar.
+- [ ] Otros jugadores (verde), cosmético (azul) y salida (S roja) en el lugar correcto. F4 ya no hace nada; F1 > Partida > Minimapa lo oculta y lo vuelve a mostrar.
 - [ ] Al empezar el caso el glowstick queda solo en la mano izquierda.
 - [ ] Cada 2 s cae uno mientras caminás; quieto no tira. Los demás lo ven. Con brújula/radio en la mano no tira.
 - [ ] Monstruos en el minimapa: X naranja donde está cada uno; roja cuando persigue.
@@ -106,8 +106,9 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] El texto de la izquierda (aviso del cosmético, F9) arranca más abajo y no tapa las condiciones del caso.
       F1 > Avisos > Altura lo ajusta.
 - [ ] F9 ya no lista "Exclusivos posibles" ni coleccionables, y no hay marcadores de tickets/XP.
-- [ ] F1 dentro de una zona segura del caso abre el menú; al salir de la zona se cierra. Fuera de zona segura no abre.
-- [ ] Barra arriba con F1, F2, F4, F5, F6, F7/F8, F9 y qué hace cada una (verde si está prendida) en el lobby, en zona
+- [ ] F1 y F2 abren en cualquier momento del caso, dentro o fuera de zona segura; mientras están abiertos el jugador no
+      se mueve ni mira y el cursor queda libre. Esc o la X los cierran.
+- [ ] Barra arriba con F1, F2, F6, F7/F8, F9 y qué hace cada una (tecla blanca si está prendida) en el lobby, en zona
       segura y con F1 abierto. En el caso no tapa el minimapa. El menú F1 queda debajo de la barra, sin pisarse.
 - [ ] En grupo: debajo del minimapa "Falta agarrar el cosmético: ..." y en el marcador del jugador "◆ falta el cosmético".
 - [ ] Minimapa: zonas seguras en verde claro; al estar en la zona de inicio (fuera de la grilla) el mapa se agranda con
@@ -138,3 +139,40 @@ Correr antes de cada release. `pwsh -File tools\dev.ps1 -Restart` deja el build 
 - [ ] `dist\LabyHelper-Setup-X.Y.Z.exe --detect` encuentra el juego.
 - [ ] En una carpeta de prueba: instalar con `--path <carpeta> --yes` y desinstalar con `--uninstall` la deja limpia.
 - [ ] Instalación real: el juego abre desde Steam y el log muestra la versión correcta.
+
+## Interfaz nativa (0.3.18)
+- [ ] Log `UiSkin: game font and sprites ready.` unos segundos después de abrir el juego.
+- [ ] F1, F2 y la barra de teclas con la fuente del juego, paneles de borde irregular semi-transparentes y trazos de
+      pincel: la pestaña elegida con pincel blanco y texto negro; al pasar el mouse el pincel se llena de izquierda a
+      derecha. Todo en mayúsculas y sin tildes (COSMETICOS, TAMANO, CUANTOS).
+- [ ] Texto de la barra de teclas centrado en vertical dentro de cada tecla.
+- [ ] F1: 8 pestañas, ninguna cortada. Cada pestaña recuerda su scroll. Interruptores, sliders (arrastrar y click
+      directo) y flechas de "Marcador en el mundo" e "Idioma" funcionan y se guardan.
+- [ ] Clic en el texto de una opción con interruptor también la cambia.
+- [ ] En 1440p el panel se ve un tercio más grande que en 1080p y nada se sale de la pantalla.
+- [ ] F1 > General > Reiniciar el juego: pide confirmación, cierra el juego y vuelve a abrirse solo por Steam.
+- [ ] F1 > General > Forzar actualización: "Descargando...", el juego se cierra y vuelve a abrir; aparece el aviso
+      "LabyHelper se actualizó solo: X -> Y" y Mods\LabyHelper.dll es el del último release. (En la PC de desarrollo
+      reemplaza el DLL de desarrollo: volvé a correr dev.ps1 después.)
+- [ ] Vistas previas: pasar el mouse por Partida > Minimapa / Tamaño / Leyenda / Recorrido muestra el minimapa de
+      ejemplo arriba a la derecha a ese tamaño; Avisos > Altura del texto muestra el aviso a esa altura; "Cartel cuando
+      un monstruo te persigue" muestra el cartel rojo; Imagen muestra el degradé y cambia al mover los sliders;
+      Tablero muestra la carpeta con el post-it al tamaño elegido.
+
+## Minimapa: recorrido y leyenda
+- [ ] En un caso: línea amarilla detrás tuyo por donde caminaste, precisa en las esquinas, que se desvanece hacia atrás.
+- [ ] Otros jugadores: línea de su color (el mismo que su punto). Al morir o reaparecer no cruza el mapa con una recta.
+- [ ] Cono de visión: el tuyo (amarillo) gira con la cámara; el de cada jugador sigue hacia dónde mira, sin saltos.
+- [ ] Leyenda debajo del minimapa grande y legible sobre fondo oscuro, con la fila "Recorrido". F1 > Partida la apaga.
+
+## Vidas infinitas (host)
+- [ ] En el lobby como host, al elegir un caso del tablero: el botón de vidas infinitas del juego queda prendido (log
+      `InfiniteLives: on (zone N)`), y el caso arranca con vidas infinitas.
+- [ ] Apagarlo con el botón del juego lo deja apagado; al elegir otro caso se vuelve a prender.
+- [ ] F1 > Partida > "Vidas infinitas al elegir un caso" apagado: no lo toca. Como cliente no hace nada.
+
+## Póster junto al cosmético
+- [ ] En un caso, ~4 s después de empezar: log `Poster: on a wall X m from the cosmetic` y el póster con marco oscuro en
+      la pared más cercana al cosmético, mirando hacia afuera, a la altura de los ojos, iluminado por la linterna.
+- [ ] Sin pared a menos de 6 m: log `Poster: no wall within 6 m of the cosmetic.` y nada colgado.
+- [ ] No traba al jugador (no tiene colisión). F1 > Avisos lo apaga para el próximo caso.

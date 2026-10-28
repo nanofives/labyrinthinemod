@@ -22,6 +22,7 @@
     <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.IMGUIModule.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.InputLegacyModule.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.ImageConversionModule.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.RenderPipelines.Core.Runtime.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\Unity.RenderPipelines.HighDefinition.Runtime.dll" Private="false" />
     <Reference Include="$(MLDir)\Il2CppAssemblies\UnityEngine.AudioModule.dll" Private="false" />
@@ -51,6 +52,7 @@
 
   <!-- Map pools extracted offline from the game files (re/scripts/extract_pools.py). -->
   <ItemGroup>
+    <EmbeddedResource Include="poster.png" LogicalName="poster.png" />
     <EmbeddedResource Include="pools.default.json" LogicalName="pools.default.json" Condition="Exists('pools.default.json')" />
     <!-- The updater plugin rides inside the mod so the mod can replace an outdated one (UpdaterRepair.cs). -->
     <ProjectReference Include="..\Updater\LabyHelper.Updater.csproj" ReferenceOutputAssembly="false" Private="false" />

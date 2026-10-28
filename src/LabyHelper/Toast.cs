@@ -168,7 +168,7 @@ internal static class Toast
     {
         _placeholder ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
         _placeholder.fontSize = Mathf.Max(9, (int)(inner.height * (placeholder.Length <= 2 ? 0.5f : 0.22f)));
-        GUI.Label(inner, placeholder, _placeholder);
+        GUI.Label(inner, Features.Ui.Caps(placeholder), _placeholder);
     }
 
     private static readonly HashSet<IntPtr> LoggedFailures = new();
@@ -186,9 +186,9 @@ internal static class Toast
     private static void DrawShadowed(Rect rect, string text, GUIStyle style, Color color)
     {
         GUI.color = Color.black;
-        GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), text, style);
+        GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), Features.Ui.Caps(text), style);
         GUI.color = color;
-        GUI.Label(rect, text, style);
+        GUI.Label(rect, Features.Ui.Caps(text), style);
         GUI.color = Color.white;
     }
 }

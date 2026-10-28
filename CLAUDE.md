@@ -21,6 +21,11 @@ No hacer release ni commits sin que lo pida.
   Mariano todo viene prendido por defecto. La regla de casos random (`RandomCasesOnlyNew`: siempre cosmético y
   solo nuevos, repartidos entre las 4 carpetas por `Distribution.cs`) solo se apaga desde Opciones LabyHelper
   (`OptionsMenu.cs`, F1); no le agregues tecla rápida. Reemplazó a la regla de monstruos mínimos.
+- UI: todo lo que dibuja el mod pasa por `Features/Ui.cs` con el estilo del juego (fuente Larke Sans y sprites del
+  menú que `UiSkin.cs` copia en runtime, no se distribuyen). Reglas de Mariano: **todo en mayúsculas y sin tildes**
+  (`Ui.Caps`; Larke no tiene letras acentuadas y `Normalize()` no anda en el runtime del juego), paneles
+  semi-transparentes, layout pensado en 1080p y escalado (`Ui.BeginScaled`). F1/F2 se abren en cualquier momento.
+  El minimapa no tiene tecla rápida: solo F1 > Partida.
 - Grupo: `Party.cs` comparte los desbloqueados por Steam lobby member data (`lh_owned`). El juego solo manda al
   host los cosméticos equipados, así que los demás jugadores necesitan el mod.
 - `src/Installer/`: instalador .NET Framework 4.8 con el paquete embebido.

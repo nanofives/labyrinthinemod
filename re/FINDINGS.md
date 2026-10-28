@@ -101,3 +101,17 @@ Dump regenerado el 2026-10-27 tras la expansión egipcia (ver la última secció
   (+0x4A3/+0x18C1, hasta 10), `SpawnCustomizationItems`. `MazeGenerator.MixSeed` es nuevo y solo lo usa el puzzle de pilares.
 - `MazeTypesConfigSO` suma `DLC_Egyptian_mazeTypes` y `DLC_Alien_mazeTypes` (otro DLC en camino) con
   `HandleDLCMapsSelectionLogic` en la elección de mapas del tablero.
+
+## Vidas infinitas (lobby)
+- `LobbySync.infiniteLives` (SyncVar, hook `OnInfiniteLivesSyncVarChanged`) es el botón del lobby (`LobbyManager.ToggleInfiniteLives`
+  -> `LobbySync.ServerTryToggleInfiniteLives`, que solo exige `NetworkServer.active` e invierte el valor). Con vidas infinitas
+  `GameValues.Lives` queda en -1 (`get_InfiniteLives` compara `_lives == -1`). `LobbySync.selectedZone` cambia al elegir caso.
+  `Features/InfiniteLives.cs` lo prende como host.
+
+## Look de la UI del juego
+- Fuente: los TMP usan `Larke Sans Regular/Bold/Light SDF`; el único TTF que queda en el build es `Larke Sans Bold`
+  (`Resources.FindObjectsOfTypeAll<Font>()`). No tiene letras acentuadas (el juego cae a Noto).
+- Menú principal (`Menu_UI`): botones con `Brush Impact 2` (Image Filled, se llena al hover), panel lateral `Brush Tall 4`
+  negro, popups con `Background 2 (400ppu)` / `Background 5 (400ppu)` (sliced, borde 250), switch de crossplay con
+  `Rounded Circle 64px (350ppu)` + `Circle Outline 64px - Stroke 8px (350ppu)` + perilla `Brush Radial 2`.
+  Los `Brush_0..19` de resources.assets son pinceles de 64 px, no UI.

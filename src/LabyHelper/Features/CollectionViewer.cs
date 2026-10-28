@@ -7,7 +7,7 @@ namespace LabyHelper.Features;
 
 /// <summary>
 /// Collection browser: while the game's cosmetics menu (CustomizationUIController) is open, a "Colección" button
-/// shows up in its corner; F2 opens it anywhere. Tabs: missing / owned / all, and traditional vs hardcore,
+/// shows up in its corner; F2 opens it anywhere (menus, lobby, during a case). Drawn in the game's style (Ui). Tabs: missing / owned / all, and traditional vs hardcore,
 /// grouped by body part, with counts per category. Hovering a row shows the cosmetic large next to the panel.
 /// </summary>
 internal static class CollectionViewer
@@ -15,7 +15,7 @@ internal static class CollectionViewer
     private enum Show { Missing, Owned, All }
     private enum Kind { Traditional, Hardcore, Both }
 
-    private const float RowH = 40f;
+    private const float RowH = 52f;
     private const float PreviewSize = 300f;
     private static bool _open;
     private static Show _show = Show.Missing;
@@ -119,68 +119,88 @@ internal static class CollectionViewer
         return order;
     }
 
+    private static GUIStyle _name, _nameBold, _small, _filter, _partTab;
+    private static Font _font;
+
+    private static void Styles()
+    {
+        if (_name != null && _font == UiSkin.Font) return;
+        _font = UiSkin.Font;
+        _name = Ui.Sized(Ui.Label, 24);
+        _nameBold = Ui.Sized(Ui.Bold, 24);
+        _small = Ui.Sized(Ui.Label, 21);
+        _filter = Ui.Sized(Ui.TabStyle, 21);
+        _partTab = Ui.Sized(Ui.TabStyle, 21);
+    }
+
     public static void Draw()
+    {
+        Ui.BeginScaled();
+        try { DrawScaled(); }
+        finally { Ui.EndScaled(); }
+    }
+
+    private static void DrawScaled()
     {
         if (_menuOpen && !_open)
         {
-            var b = new Rect(Screen.width - 190, 20, 170, 40);
-            if (Ui.Tab(b, Loc.T("Colección (F2)", "Collection (F2)"), false)) Toggle();
+            var b = new Rect(Ui.W - 300, 20, 280, 52);
+            if (Ui.Button(b, Loc.T("Colección (F2)", "Collection (F2)"))) Toggle();
         }
         if (!_open) return;
 
+        Styles();
         var area = OptionsMenu.PanelRect(); // same place and size as F1
         Ui.Panel(area);
-        float x = area.x + 14, y = area.y + 10, w = area.width - 28;
+        const float pad = 44f;
+        float x = area.x + pad, y = area.y + 30, w = area.width - 2 * pad;
 
-        Ui.Text(new Rect(x, y, w - 40, 26), Loc.T("Colección de cosméticos", "Cosmetics collection"), Ui.Header, Color.white);
-        if (GUI.Button(new Rect(area.xMax - 44, y, 30, 26), "X")) { SetOpen(false); return; }
-        y += 32;
-        y = PartTabs(x, y, w) + 8;
-
+        string title = Loc.T("COLECCIÓN", "COLLECTION");
+        Ui.Text(new Rect(x, y, 600, 48), title, Ui.Title, Ui.Paper);
+        float tw = Ui.Title.CalcSize(new GUIContent(title)).x;
         int trad = _all.Count(i => !i.IsHardcore), tradOwned = _all.Count(i => !i.IsHardcore && i.Owned);
         int hc = _all.Count(i => i.IsHardcore), hcOwned = _all.Count(i => i.IsHardcore && i.Owned);
-        Ui.Text(new Rect(x, y, w, 22), $"{Loc.T("Tradicionales", "Traditional")}: {tradOwned}/{trad}    HARDCORE: {hcOwned}/{hc}    Total: {tradOwned + hcOwned}/{trad + hc}",
-            Ui.Bold, Color.white);
-        y += 28;
+        Ui.Text(new Rect(x + tw + 20, y + 10, w - tw - 80, 36),
+            $"{Loc.T("Tradicionales", "Traditional")} {tradOwned}/{trad}   ·   HARDCORE {hcOwned}/{hc}   ·   Total {tradOwned + hcOwned}/{trad + hc}",
+            _small, Ui.Dim);
+        if (Ui.Close(new Rect(area.xMax - pad - 44, y + 2, 44, 44))) { SetOpen(false); return; }
+        y += 64;
+        y = PartTabs(x, y, w) + 14;
 
-        float tw = 110;
-        if (Ui.Tab(new Rect(x, y, tw, 28), Loc.T("Faltan", "Missing"), _show == Show.Missing)) { _show = Show.Missing; _nextRefresh = 0; _scroll = 0; }
-        if (Ui.Tab(new Rect(x + tw + 6, y, tw, 28), Loc.T("Tengo", "Owned"), _show == Show.Owned)) { _show = Show.Owned; _nextRefresh = 0; _scroll = 0; }
-        if (Ui.Tab(new Rect(x + 2 * (tw + 6), y, tw, 28), Loc.T("Todos", "All"), _show == Show.All)) { _show = Show.All; _nextRefresh = 0; _scroll = 0; }
-        y += 34;
-        float kx = x;
-        if (Ui.Tab(new Rect(kx, y, tw, 28), Loc.T("Tradicionales", "Traditional"), _kind == Kind.Traditional)) { _kind = Kind.Traditional; _nextRefresh = 0; _scroll = 0; }
-        if (Ui.Tab(new Rect(kx + tw + 6, y, tw, 28), "Hardcore", _kind == Kind.Hardcore)) { _kind = Kind.Hardcore; _nextRefresh = 0; _scroll = 0; }
-        if (Ui.Tab(new Rect(kx + 2 * (tw + 6), y, tw, 28), Loc.T("Ambos", "Both"), _kind == Kind.Both)) { _kind = Kind.Both; _nextRefresh = 0; _scroll = 0; }
-        y += 38;
+        // Filters: what to show, and which kind.
+        float fw = 220, fh = 48, fg = 8;
+        if (Ui.Tab(new Rect(x, y, fw, fh), Loc.T("Faltan", "Missing"), _show == Show.Missing, _filter)) { _show = Show.Missing; _nextRefresh = 0; _scroll = 0; }
+        if (Ui.Tab(new Rect(x + (fw + fg), y, fw, fh), Loc.T("Tengo", "Owned"), _show == Show.Owned, _filter)) { _show = Show.Owned; _nextRefresh = 0; _scroll = 0; }
+        if (Ui.Tab(new Rect(x + 2 * (fw + fg), y, fw, fh), Loc.T("Todos", "All"), _show == Show.All, _filter)) { _show = Show.All; _nextRefresh = 0; _scroll = 0; }
+        float kx = x + 3 * (fw + fg) + 40;
+        if (kx + 3 * (fw + fg) > x + w) { kx = x; y += fh + 8; }
+        if (Ui.Tab(new Rect(kx, y, fw, fh), Loc.T("Tradicionales", "Traditional"), _kind == Kind.Traditional, _filter)) { _kind = Kind.Traditional; _nextRefresh = 0; _scroll = 0; }
+        if (Ui.Tab(new Rect(kx + (fw + fg), y, fw, fh), "Hardcore", _kind == Kind.Hardcore, _filter)) { _kind = Kind.Hardcore; _nextRefresh = 0; _scroll = 0; }
+        if (Ui.Tab(new Rect(kx + 2 * (fw + fg), y, fw, fh), Loc.T("Ambos", "Both"), _kind == Kind.Both, _filter)) { _kind = Kind.Both; _nextRefresh = 0; _scroll = 0; }
+        y += fh + 18;
 
         // Only the selected tab's items (the tabs are the groups).
-        var layout = new List<(float y, Catalog.Item item)>();
-        float cy = 0;
-        foreach (var (_, item) in _rows)
-        {
-            layout.Add((cy, item));
-            cy += RowH;
-        }
-
-        var view = new Rect(x, y, w, area.yMax - y - 10);
-        _scroll = Ui.KeyScroll(_scroll, cy - view.height);
-        var s = GUI.BeginScrollView(view, new Vector2(0, _scroll), new Rect(0, 0, w - 20, cy));
-        _scroll = s.y;
+        float cy = _rows.Count * RowH;
+        var view = new Rect(x - 8, y, w + 16, area.yMax - y - 26);
+        float lw = view.width - 24;
+        Ui.BeginScroll(view, ref _scroll, cy, "f2");
         Catalog.Item hovered = null;
-        var mouse = Event.current.mousePosition; // scroll-view coordinates here
-        foreach (var (ry, item) in layout)
+        var mouse = Event.current.mousePosition; // content coordinates here
+        for (int k = 0; k < _rows.Count; k++)
         {
+            var item = _rows[k].item;
+            float ry = k * RowH;
             if (ry + RowH < _scroll || ry > _scroll + view.height) continue; // off-screen
-            // Only the part of the list inside the scroll view counts (rows above/below are clipped).
-            if (new Rect(0, ry, w - 20, RowH).Contains(mouse) && mouse.y >= _scroll && mouse.y <= _scroll + view.height)
-                hovered = item;
-            Catalog.DrawIcon(new Rect(10, ry + 2, RowH - 4, RowH - 4), item.Id);
-            Ui.Text(new Rect(RowH + 16, ry, 330, RowH), item.Name, item.Owned ? Ui.Label : Ui.Bold, item.Owned ? Color.white : new Color(1f, 0.9f, 0.5f));
-            Ui.Text(new Rect(RowH + 350, ry, 110, RowH), Catalog.RarityLabel(item.Rarity), Ui.Small, Catalog.RarityColor(item.Rarity));
-            Ui.Text(new Rect(w - 120, ry, 100, RowH), item.Owned ? Loc.T("lo tenés", "owned") : Loc.T("FALTA", "MISSING"), Ui.Small, item.Owned ? Color.gray : new Color(1f, 0.6f, 0.4f));
+            var row = new Rect(0, ry, lw, RowH);
+            // Only the part of the list inside the view counts (rows above/below are clipped).
+            if (row.Contains(mouse) && mouse.y >= _scroll && mouse.y <= _scroll + view.height) hovered = item;
+            Ui.RowHover(row, "f2:" + item.Id);
+            Catalog.DrawIcon(new Rect(10, ry + 3, RowH - 6, RowH - 6), item.Id);
+            Ui.Text(new Rect(RowH + 20, ry, lw * 0.5f, RowH), item.Name, item.Owned ? _name : _nameBold, item.Owned ? Ui.Paper : new Color(1f, 0.88f, 0.55f));
+            Ui.Text(new Rect(RowH + 20 + lw * 0.5f, ry, 200, RowH), Catalog.RarityLabel(item.Rarity), _small, Catalog.RarityColor(item.Rarity));
+            Ui.Text(new Rect(lw - 170, ry, 160, RowH), item.Owned ? Loc.T("lo tenés", "owned") : Loc.T("FALTA", "MISSING"), _small, item.Owned ? Ui.Dim : new Color(1f, 0.6f, 0.4f));
         }
-        GUI.EndScrollView();
+        Ui.EndScroll(ref _scroll);
         if (hovered != null) DrawPreview(area, hovered);
     }
 
@@ -198,43 +218,37 @@ internal static class CollectionViewer
         };
         var parts = _all.Select(i => i.Part).Distinct().OrderBy(p => (int)p).ToList();
         if (parts.Count > 0 && !parts.Contains(_part)) { _part = parts[0]; _nextRefresh = 0; }
-        _tabStyle ??= new GUIStyle(GUI.skin.button) { fontSize = 14 };
-        const float h = 34f, gap = 6f;
+        const float h = 52f, gap = 6f;
         float cx = x;
         foreach (var part in parts)
         {
             var items = pool.Where(i => i.Part == part).ToList();
             string label = $"{Catalog.PartName(part)}  {items.Count(i => i.Owned)}/{items.Count}";
-            float tw = _tabStyle.CalcSize(new GUIContent(label)).x + 18f;
+            float tw = _partTab.CalcSize(new GUIContent(Ui.Caps(label))).x + 44f;
             if (cx > x && cx + tw > x + w) { cx = x; y += h + gap; }
-            var prev = GUI.backgroundColor;
-            GUI.backgroundColor = part == _part ? new Color(0.35f, 0.6f, 1f) : new Color(0.3f, 0.3f, 0.3f);
-            if (GUI.Button(new Rect(cx, y, tw, h), label, _tabStyle) && part != _part)
+            if (Ui.Tab(new Rect(cx, y, tw, h), label, part == _part, _partTab) && part != _part)
             {
                 _part = part;
                 _scroll = 0;
                 _nextRefresh = 0;
             }
-            GUI.backgroundColor = prev;
             cx += tw + gap;
         }
         return y + h;
     }
 
-    private static GUIStyle _tabStyle;
-
     /// <summary>Large picture of the hovered cosmetic, beside the panel (right side, or left if it doesn't fit).</summary>
     private static void DrawPreview(Rect area, Catalog.Item item)
     {
-        const float pad = 12f, textH = 56f;
+        const float pad = 22f, textH = 60f;
         float pw = PreviewSize + 2 * pad, ph = PreviewSize + 2 * pad + textH;
-        float px = area.xMax + 12 + pw <= Screen.width ? area.xMax + 12 : Mathf.Max(0, area.x - 12 - pw);
-        float py = Mathf.Clamp(Event.current.mousePosition.y - ph / 2, 10, Screen.height - ph - 10);
+        float px = area.xMax + 12 + pw <= Ui.W ? area.xMax + 12 : Mathf.Max(0, area.x - 12 - pw);
+        float py = Mathf.Clamp(Event.current.mousePosition.y - ph / 2, 10, Ui.H - ph - 10);
         var box = new Rect(px, py, pw, ph);
         Ui.Panel(box);
         Catalog.DrawIcon(new Rect(px + pad, py + pad, PreviewSize, PreviewSize), item.Id);
         float ty = py + pad + PreviewSize + 4;
-        Ui.Text(new Rect(px + pad, ty, PreviewSize, 26), item.Name, Ui.Bold, Color.white);
+        Ui.Text(new Rect(px + pad, ty, PreviewSize, 26), item.Name, Ui.Header, Ui.Paper);
         Ui.Text(new Rect(px + pad, ty + 26, PreviewSize, 24),
             $"{Catalog.RarityLabel(item.Rarity)} · {Catalog.PartName(item.Part)} · {(item.Owned ? Loc.T("lo tenés", "owned") : Loc.T("FALTA", "MISSING"))}",
             Ui.Small, Catalog.RarityColor(item.Rarity));

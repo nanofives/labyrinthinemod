@@ -35,6 +35,8 @@ internal static class Settings
     public static MelonPreferences_Entry<bool> MinimapEnabled;
     public static MelonPreferences_Entry<float> MinimapSize;
     public static MelonPreferences_Entry<bool> MinimapLegend;
+    public static MelonPreferences_Entry<bool> MinimapTrail;
+    public static MelonPreferences_Entry<bool> PosterNearCosmetic;
     public static MelonPreferences_Entry<float> HudTextTop;
     public static MelonPreferences_Entry<bool> AutoFlashlight;
     public static MelonPreferences_Entry<bool> PoolAddAllSeasonal;
@@ -45,6 +47,7 @@ internal static class Settings
     public static MelonPreferences_Entry<bool> MapVarietyEnabled;
     public static MelonPreferences_Entry<float> MapRareChance;
     public static MelonPreferences_Entry<float> MapSubmazeMultiplier;
+    public static MelonPreferences_Entry<bool> InfiniteLivesByDefault;
 #if EXPERIMENTS
     public static MelonPreferences_Entry<bool> ExperimentForeignPieces;
     public static MelonPreferences_Entry<string> ExperimentDonorMaze;
@@ -99,11 +102,15 @@ internal static class Settings
         AutoGlowstickSeconds = _cat.CreateEntry("AutoGlowstickInterval", 2f,
             description: "Segundos entre glowsticks automaticos (minimo 1).");
         MinimapEnabled = _cat.CreateEntry("MinimapEnabled", true,
-            description: "Minimapa fijo arriba a la derecha durante los casos. F4 lo muestra/oculta.");
+            description: "Minimapa fijo arriba a la derecha durante los casos. Se prende y apaga solo desde Opciones LabyHelper (F1).");
         MinimapSize = _cat.CreateEntry("MinimapSize", 260f,
             description: "Lado del minimapa en pixeles (120 a 600).");
         MinimapLegend = _cat.CreateEntry("MinimapLegend", true,
             description: "Leyenda de colores y simbolos debajo del minimapa.");
+        PosterNearCosmetic = _cat.CreateEntry("PosterNearCosmetic", true,
+            description: "Cuelga un poster en la pared mas cercana al cosmetico del caso (UserData\\LabyHelper.poster.png lo reemplaza). Solo lo ve quien tiene el mod.");
+        MinimapTrail = _cat.CreateEntry("MinimapTrail", true,
+            description: "Rastro en el minimapa de por donde camino cada jugador (vos en amarillo, los demas en su color), los ultimos ~180 m.");
         HudTextTop = _cat.CreateEntry("HudTextTopPct", 11f,
             description: "Altura del texto de LabyHelper a la izquierda (aviso del cosmetico, F9), en % de la pantalla desde arriba. Mas abajo que las condiciones del caso del juego.");
         AutoFlashlight = _cat.CreateEntry("AutoFlashlight", true,
@@ -134,6 +141,8 @@ internal static class Settings
         ExperimentDonorMaze = _cat.CreateEntry("ExperimentDonorMaze", "Maze_F",
             description: "Mapa que presta sus piezas raras: Maze_A..Maze_R o Maze_Backrooms. Solo se usa en mapas con el mismo tileSize (casi todos usan 10; D=7, R=21, K/O/Q=30).");
 #endif
+        InfiniteLivesByDefault = _cat.CreateEntry("InfiniteLivesByDefault", true,
+            description: "Como host: el boton de vidas infinitas del lobby se prende solo, asi cada caso que elegis arranca con vidas infinitas. Si lo apagas con el boton del juego, vuelve al elegir otro caso.");
         PartySync = _cat.CreateEntry("PartySync", true,
             description: "Comparte por el lobby de Steam que cosmeticos tiene cada jugador (todos necesitan el mod).");
     }
