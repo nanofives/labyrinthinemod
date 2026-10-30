@@ -63,6 +63,7 @@ public class Core : MelonMod
         Safe("OptionsMenu.Update", () => OptionsMenu.Update());
         Safe("InfiniteLives.Update", () => InfiniteLives.Update());
         Safe("Poster.Update", () => Poster.Update());
+        Safe("UpdateInfo.Update", () => UpdateInfo.Update());
         if (_learnAt.Count > 0 && Time.unscaledTime >= _learnAt[0])
         {
             _learnAt.RemoveAt(0);

@@ -93,7 +93,7 @@ internal static class Settings
         MoreDlcMaps = _cat.CreateEntry("MoreDlcMaps", true,
             description: "Como host: si todos en el lobby tienen el DLC egipcio, los mapas egipcios salen 4 veces mas seguido en el tablero.");
         AutoUpdate = _cat.CreateEntry("AutoUpdate", true,
-            description: "Al abrir el juego, baja la ultima version de GitHub antes de cargar el mod (plugin LabyHelper.Updater).");
+            description: "Baja la ultima version de GitHub: al abrir el juego (plugin LabyHelper.Updater) y cada 30 minutos mientras se juega (queda lista para el proximo inicio).");
         CosmeticPanelOnByDefault = _cat.CreateEntry("CosmeticPanelOnByDefault", true,
             description: "F9 (aviso fijo del cosmetico, jugadores y marcadores) arranca prendido en cada caso.");
         AutoGlowstick = _cat.CreateEntry("AutoGlowstick", true,

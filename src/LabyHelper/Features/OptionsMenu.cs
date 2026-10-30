@@ -268,7 +268,7 @@ internal static class OptionsMenu
         Cycle(ref cy, cw, Loc.T("Idioma del mod", "Mod language"), Settings.Language, Loc.Languages);
 
         Section(ref cy, cw, Loc.T("Actualizaciones", "Updates"));
-        Toggle(ref cy, cw, Loc.T("Actualizar solo al abrir el juego", "Update automatically when the game starts"), Settings.AutoUpdate);
+        Toggle(ref cy, cw, Loc.T("Actualizar solo", "Update automatically"), Settings.AutoUpdate);
         Ui.Text(new Rect(14, cy, cw - 14, RowH), UpdateStatus(), _small, UpdateInfo.NewerAvailable ? new Color(1f, 0.88f, 0.55f) : Ui.Dim);
         cy += RowH;
 
@@ -423,6 +423,9 @@ internal static class OptionsMenu
                                      " · updater missing: install once with LabyHelper-Setup.exe");
         if (UpdateInfo.Checking) return installed + Loc.T(" · buscando en GitHub...", " · checking GitHub...");
         if (UpdateInfo.CheckFailed || UpdateInfo.Latest == null) return installed + Loc.T(" · no se pudo consultar GitHub", " · couldn't reach GitHub");
+        if (UpdateInfo.Staged != null)
+            return installed + Loc.T($" · {UpdateInfo.Staged} descargada, se activa al reiniciar el juego",
+                                     $" · {UpdateInfo.Staged} downloaded, active after restarting the game");
         if (!UpdateInfo.NewerAvailable) return installed + Loc.T(" · es la última", " · up to date");
         return installed + (Settings.AutoUpdate.Value
             ? Loc.T($" · nueva: {UpdateInfo.Latest}, se instala al reiniciar el juego", $" · new: {UpdateInfo.Latest}, installs on the next game start")
