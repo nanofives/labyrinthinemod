@@ -125,8 +125,11 @@ internal static partial class Minimap
             scale = size / Mathf.Max(viewW, viewH);
             return new Rect(Screen.width - viewW * scale - 16, 16, viewW * scale, viewH * scale);
         }
-        float bigSize = Mathf.Min(Screen.height * 0.8f, Screen.width * 0.62f);
-        scale = bigSize / Mathf.Max(viewW, viewH);
+        // Bigger mazes get more of the screen: a small one (~15 tiles) about two thirds of the height, as before, a big
+        // one (60+) almost all of it, each axis fitted on its own so a long, flat maze uses the width.
+        float t = Mathf.InverseLerp(15f, 60f, Mathf.Max(viewW, viewH));
+        float availW = Screen.width * Mathf.Lerp(0.6f, 0.95f, t), availH = Screen.height * Mathf.Lerp(0.66f, 0.84f, t);
+        scale = Mathf.Min(availW / viewW, availH / viewH);
         float w = viewW * scale, h = viewH * scale;
         return new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f + Screen.height * 0.03f, w, h);
     }
@@ -202,8 +205,8 @@ internal static partial class Minimap
             if (Route[i] - Route[i - 1] != Route[i + 1] - Route[i]) { turn = i; break; }
         float total = (Route.Count - 1) * cell;
         if (turn < Route.Count - 1)
-            Label(cam, GridToWorld(Route[turn], y), Loc.T($"Doblá acá\n{turn * cell:0} m", $"Turn here\n{turn * cell:0} m"), Color.white);
-        Label(cam, GridToWorld(Route[^1], y + 1f), Loc.T($"Destino\n{total:0} m", $"Destination\n{total:0} m"), RouteColour);
+            Label(cam, GridToWorld(Route[turn], y), Loc.T($"Doblá acá\n{turn * cell:0} m", $"Turn here\n{turn * cell:0} m"), Color.white, turn * cell);
+        Label(cam, GridToWorld(Route[^1], y + 1f), Loc.T($"Destino\n{total:0} m", $"Destination\n{total:0} m"), RouteColour, total);
     }
 
     // ---- 3D turn arrow ----
@@ -320,16 +323,23 @@ internal static partial class Minimap
 
     private static bool _arrowFailed;
 
-    private static void Label(Camera cam, Vector3 world, string text, Color colour)
+    // Route labels: never smaller than LabelMin (1080p pixels), growing up to LabelMax as you walk up to the spot.
+    private const float LabelMin = 22f, LabelMax = 54f, LabelFar = 40f, LabelNear = 3f;
+
+    private static void Label(Camera cam, Vector3 world, string text, Color colour, float metres)
     {
+        float near = Mathf.InverseLerp(LabelFar, LabelNear, metres);
+        int size = Mathf.RoundToInt(Mathf.Lerp(LabelMin, LabelMax, near * near) * Ui.Scale);
+        _routeStyle.fontSize = size;
         Vector3 sp = cam.WorldToScreenPoint(world);
         bool behind = sp.z < 0;
         if (behind) sp = -sp;
-        const float margin = 60f;
-        float x = Mathf.Clamp(sp.x, margin, Screen.width - margin), yy = Mathf.Clamp(Screen.height - sp.y, margin, Screen.height - margin);
-        var rect = new Rect(x - 150, yy - 25, 300, 50);
+        float w = size * 14f, h = size * 2.6f, margin = size * 3f;
+        float x = Mathf.Clamp(sp.x, margin, Screen.width - margin), yy = Mathf.Clamp(Screen.height - sp.y, h / 2f + 10f, Screen.height - h / 2f - 10f);
+        var rect = new Rect(x - w / 2f, yy - h / 2f, w, h);
+        float shadow = Mathf.Max(2f, size / 12f);
         GUI.color = Color.black;
-        GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), Ui.Caps(text), _routeStyle);
+        GUI.Label(new Rect(rect.x + shadow, rect.y + shadow, rect.width, rect.height), Ui.Caps(text), _routeStyle);
         GUI.color = colour;
         GUI.Label(rect, Ui.Caps(text), _routeStyle);
         GUI.color = Color.white;

@@ -29,7 +29,7 @@ internal static partial class Minimap
     private static Vector2 _end = new(-1, -1);
     private static float _nextCheck;
     private static GUIStyle _style;
-    private static readonly List<(Vector3 pos, bool chasing)> Monsters = new();
+    private static readonly List<(IntPtr id, Vector3 pos, bool chasing)> Monsters = new();
     private static float _nextMonsters;
     private static Texture2D _arrow;
 
@@ -106,6 +106,58 @@ internal static partial class Minimap
         }
         list.Add(pos);
         if (list.Count > TrailMax) list.RemoveAt(0);
+    }
+
+    // Monsters leave a shorter trail (the last ~25 m), kept per monster object and dropped when it despawns.
+    private const int MonsterTrailMax = 60;
+    private static readonly Dictionary<IntPtr, List<Vector3>> MonsterTrails = new();
+
+    private static void AddMonsterTrail(IntPtr id, Vector3 pos)
+    {
+        if (!MonsterTrails.TryGetValue(id, out var list)) MonsterTrails[id] = list = new List<Vector3>();
+        if (list.Count > 0)
+        {
+            var last = list[^1];
+            float d = new Vector2(pos.x - last.x, pos.z - last.z).magnitude;
+            if (d < TrailStep) return;
+            if (d > 40f) list.Clear(); // teleported
+        }
+        list.Add(pos);
+        if (list.Count > MonsterTrailMax) list.RemoveAt(0);
+    }
+
+    private static readonly Color MonsterColour = new(1f, 0.6f, 0.15f), MonsterChaseColour = new(1f, 0.15f, 0.1f);
+    private static Texture2D _monsterIcon;
+
+    /// <summary>64x64 eight-pointed spiky star: white fill (tinted when drawn) with a black outline.</summary>
+    private static Texture2D MakeMonsterIcon()
+    {
+        const int n = 64, spikes = 8;
+        var poly = new Vector2[spikes * 2];
+        for (int i = 0; i < poly.Length; i++)
+        {
+            float a = Mathf.PI * i / spikes, rad = i % 2 == 0 ? 30f : 15f;
+            poly[i] = new Vector2(32f + rad * Mathf.Sin(a), 32f + rad * Mathf.Cos(a));
+        }
+        var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+        var px = new Color32[n * n];
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float d = SignedDistance(new Vector2(x + 0.5f, y + 0.5f), poly);
+                px[y * n + x] = d < -3.5f ? new Color32(255, 255, 255, 255) : d < 0.5f ? new Color32(0, 0, 0, 255) : new Color32(0, 0, 0, 0);
+            }
+        tex.SetPixels32(px);
+        tex.Apply(false);
+        return tex;
+    }
+
+    private static void MonsterIcon(Vector2 at, float size, Color col)
+    {
+        _monsterIcon ??= MakeMonsterIcon();
+        GUI.color = col;
+        GUI.DrawTexture(new Rect(at.x - size / 2, at.y - size / 2, size, size), _monsterIcon, ScaleMode.StretchToFill, true);
+        GUI.color = Color.white;
     }
 
     private static readonly Color MeColour = new(1f, 0.86f, 0.16f);
@@ -254,6 +306,7 @@ internal static partial class Minimap
         _mapPtr = map.Pointer;
         _view = new Rect(0, 0, sx, sy);
         Trails.Clear();
+        MonsterTrails.Clear();
         _legendUntil = Time.unscaledTime + LegendSeconds; // new maze = the case just started
         MinimapLevels.Clear();
         _levelChecks.Clear();
@@ -359,6 +412,13 @@ internal static partial class Minimap
                 var col = key == MeKey ? MeColour : Players.ColourOf(key);
                 DrawTrail(pts, On(col, trail[^1].y), dot);
             }
+            foreach (var (_, trail) in MonsterTrails)
+            {
+                if (trail.Count < 2) continue;
+                pts.Clear();
+                foreach (var w in trail) pts.Add(ToScreen(ToGrid(w)));
+                DrawTrail(pts, On(MonsterColour, trail[^1].y), dot * 0.8f);
+            }
         }
         DrawRouteOnMap(g => ToScreen(g), scale);
         if (_end.x >= 0) Dot(ToScreen(_end), Mathf.Max(6f, scale * 1.5f), On(new Color(1f, 0.3f, 0.25f), _origin.y), "S");
@@ -380,8 +440,9 @@ internal static partial class Minimap
         }
         foreach (var c in Objectives.Pending)
             Dot(ToScreen(ToGrid(c.Pos)), 10f, On(Objectives.Colour, c.Pos.y), Objectives.Glyph(c.Kind));
-        foreach (var (pos, chasing) in Monsters)
-            Dot(ToScreen(ToGrid(pos)), chasing ? 11f : 9f, On(chasing ? new Color(1f, 0.15f, 0.1f) : new Color(1f, 0.6f, 0.15f), pos.y), "X");
+        foreach (var (_, pos, chasing) in Monsters)
+            MonsterIcon(ToScreen(ToGrid(pos)), chasing ? 26f * (1f + 0.12f * Mathf.Sin(Time.unscaledTime * 10f)) : 20f,
+                On(chasing ? MonsterChaseColour : MonsterColour, pos.y));
         // Other players: a big dot in their own colour plus their name, so you can tell them apart.
         float cone = Mathf.Clamp(size * 0.2f, 40f, 90f);
         foreach (var p in Players.Others())
@@ -473,8 +534,8 @@ internal static partial class Minimap
             ("◆", Objectives.Colour, Loc.T("Objetivo", "Objective")),
             ("O", Objectives.Colour, Loc.T("Dónde va el objeto", "Where an item goes")),
             ("◎", Objectives.Colour, Loc.T("Lugar a alcanzar", "Place to reach")),
-            ("X", new Color(1f, 0.6f, 0.15f), Loc.T("Monstruo", "Monster")),
-            ("X", new Color(1f, 0.15f, 0.1f), Loc.T("Monstruo persiguiendo", "Monster chasing")),
+            (null, MonsterColour, Loc.T("Monstruo y su recorrido", "Monster and its trail")),
+            (null, MonsterChaseColour, Loc.T("Monstruo persiguiendo", "Monster chasing")),
             ("S", new Color(1f, 0.3f, 0.25f), "Sexy salida"),
             ("■", new Color(0.3f, 0.95f, 0.45f), Loc.T("Zona segura", "Safe zone")),
             ("■", new Color(0.35f, 0.43f, 0.63f), Loc.T("Landmark", "Landmark")),
@@ -514,7 +575,8 @@ internal static partial class Minimap
             var (glyph, colour, label) = rows[i];
             float x = box.x + pad + (i / perCol) * (colW + gap), y = box.y + pad + (i % perCol) * rowH;
             GUI.color = new Color(colour.r, colour.g, colour.b, colour.a * alpha);
-            GUI.Label(new Rect(x, y, glyphW, rowH), glyph, _legendGlyph);
+            if (glyph == null) MonsterIcon(new Vector2(x + glyphW / 2, y + rowH / 2), size * 1.1f, GUI.color); // drawn icon, no glyph
+            else GUI.Label(new Rect(x, y, glyphW, rowH), glyph, _legendGlyph);
             GUI.color = new Color(0.95f, 0.95f, 0.93f, alpha);
             GUI.Label(new Rect(x + glyphW, y, colW - glyphW, rowH), Ui.Caps(label), text);
         }
@@ -655,8 +717,10 @@ internal static partial class Minimap
                 if (sync == null || !sync.IsEnabled) continue;
                 var st = sync.CurrentAnimationState;
                 bool chasing = sync.IsChasingPlayer || st == AnimState.MonsterRun || st == AnimState.MonsterSpot || st == AnimState.MonsterCharge;
-                Monsters.Add((sync.transform.position, chasing));
+                Monsters.Add((sync.Pointer, sync.transform.position, chasing));
+                if (Settings.MinimapTrail.Value) AddMonsterTrail(sync.Pointer, sync.transform.position);
             }
+            foreach (var id in MonsterTrails.Keys.Where(k => !Monsters.Any(m => m.id == k)).ToList()) MonsterTrails.Remove(id);
         }
         catch (Exception e)
         {

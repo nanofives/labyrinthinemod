@@ -10,6 +10,13 @@ sección a la versión nueva.
   instalada y avisa en pantalla que se activa al reiniciar el juego. F1 > General muestra el mismo estado. Se apaga con el
   mismo interruptor "Actualizar solo".
 
+### Información (no cambia la jugabilidad)
+- "Doblá acá" y "Destino": el texto tiene un tamaño mínimo legible y se agranda a medida que te acercás (más del
+  doble en los últimos metros).
+- Monstruos en el minimapa: ícono nuevo (una estrella con púas, naranja; roja y latiendo cuando persigue) y un
+  recorrido más corto que el de los jugadores (los últimos ~25 m) para ver por dónde vino.
+- Mapa grande (M): los laberintos grandes ocupan más pantalla, y los largos y bajos usan el ancho.
+
 ## [0.3.19] - 2026-10-28
 
 ### Interfaz
