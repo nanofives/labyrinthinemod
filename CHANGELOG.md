@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.20] - 2026-10-30
+
 ### Actualizaciones
 - Con el juego abierto, el mod busca versiones nuevas cada 30 minutos. Si hay una, la baja en segundo plano, la deja
   instalada y avisa en pantalla que se activa al reiniciar el juego. F1 > General muestra el mismo estado. Se apaga con el
