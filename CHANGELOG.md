@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.26] - 2026-10-31
+
 ### Grupo
 - Desincronización con jugadores fuera del lobby de Steam (crossplay, o Steam les cortó la conexión): el host no los
   veía, dejaba las reglas prendidas, y el mod de ellos se creía host y elegía su propio cosmético (y podía generar
