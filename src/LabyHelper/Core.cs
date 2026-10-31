@@ -45,6 +45,7 @@ public class Core : MelonMod
         Safe("GameRestart.Update", () => GameRestart.Update());
         Safe("Brightness.HandleHotkeys", () => Brightness.HandleHotkeys());
         Safe("CosmeticAlert.Update", () => CosmeticAlert.Update());
+        Safe("AllPickedBanner.Update", () => AllPickedBanner.Update());
         Safe("Pigman.Update", () => Pigman.Update());
         Safe("MonsterAlert.Update", () => MonsterAlert.Update());
         Safe("Revived.Update", () => Revived.Update());
@@ -83,6 +84,7 @@ public class Core : MelonMod
 #endif
         Safe("GameState.OnSceneLoaded", () => GameState.OnSceneLoaded());
         Safe("CosmeticAlert.OnSceneLoaded", () => CosmeticAlert.OnSceneLoaded());
+        Safe("AllPickedBanner.OnSceneLoaded", () => AllPickedBanner.OnSceneLoaded());
         Safe("Pigman.OnSceneLoaded", () => Pigman.OnSceneLoaded());
         Safe("MonsterAlert.OnSceneLoaded", () => MonsterAlert.OnSceneLoaded());
         Safe("Revived.OnSceneLoaded", () => Revived.OnSceneLoaded());
@@ -117,6 +119,7 @@ public class Core : MelonMod
         Safe("OptionsMenu.Draw", () => OptionsMenu.Draw());
         Safe("CaseBoard.DrawTooltip", () => CaseBoard.DrawTooltip());
         Safe("Toast.Draw", () => Toast.Draw());
+        Safe("AllPickedBanner.Draw", () => AllPickedBanner.Draw());
     }
 
     private static readonly System.Collections.Generic.Dictionary<string, string> LastError = new();

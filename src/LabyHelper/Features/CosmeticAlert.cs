@@ -154,6 +154,13 @@ internal static class CosmeticAlert
 
     private static List<Party.Member> _missing = new();
 
+    /// <summary>This case has a cosmetic we know of (spawned here, or already picked up by us).</summary>
+    public static bool CaseHasCosmetic()
+    {
+        Live.RemoveAll(p => p == null || p.WasCollected);
+        return Live.Count > 0 || PickedUp.Count > 0;
+    }
+
     /// <summary>
     /// A modded player picked this item up in this case only if they said so for this case's seed. Anything else
     /// (nothing published yet, or the "nothing picked" published at scene load before the contract was set, with

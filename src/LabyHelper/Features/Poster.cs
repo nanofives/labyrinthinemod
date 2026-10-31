@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using MelonLoader.Utils;
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 
 namespace LabyHelper.Features;
 
@@ -11,6 +12,8 @@ namespace LabyHelper.Features;
 /// the cosmetic, and the closest near-vertical surface within 6 m gets a framed quad with the picture, facing out.
 /// Local only (each player with the mod places their own; same cosmetic and walls, so same spot). The picture is the
 /// embedded poster.png, or UserData\LabyHelper.poster.png if present. Off in F1 > Alerts.
+/// The frame is an RGB LED strip (by request): unlit dots in a rainbow that runs around the poster, plus 8 small
+/// point lights along it, coloured like the dots under them, so the wall and the poster glow around it.
 /// </summary>
 internal static class Poster
 {
@@ -24,11 +27,14 @@ internal static class Poster
     {
         _done = false;
         _go = null; // destroyed with the scene
+        _ledMat = null;
+        LedLights.Clear();
         _next = Time.unscaledTime + 4f; // maze modules finish spawning a little after the scene loads
     }
 
     public static void Update()
     {
+        AnimateLeds();
         if (_done || !GameState.InCase || Time.unscaledTime < _next) return;
         _next = Time.unscaledTime + 2f;
         if (!Settings.PosterNearCosmetic.Value) return;
@@ -70,10 +76,101 @@ internal static class Poster
         _go.transform.position = at + normal * 0.03f;
         _go.transform.rotation = Quaternion.LookRotation(-normal, Vector3.up); // a quad shows its -Z side
 
-        // Dark frame slightly larger, then the picture just in front of it.
-        Quad(_go.transform, Size + 0.1f, 0f, Solid(new Color(0.08f, 0.06f, 0.05f)));
+        // Dark frame slightly larger, then the picture just in front of it, then the LED strip around it.
+        Quad(_go.transform, Size + 0.2f, 0f, Solid(new Color(0.08f, 0.06f, 0.05f)));
         Quad(_go.transform, Size, 0.01f, Picture());
+        try { Leds(_go.transform); }
+        catch (Exception e) { Core.Log.Warning($"Poster: LED strip: {e.Message}"); }
         Core.Log.Msg($"Poster: on a wall {bestDist:0.0} m from the cosmetic at {best.point}.");
+    }
+
+    // ---- LED strip ----
+
+    private const int LedDots = 32;           // dots per side
+    private const float LedLoop = 6f;         // seconds for the rainbow to go once along a side
+    private const float LedLumen = 220f, LedRange = 3.5f;
+    private static Material _ledMat;
+    private static Texture2D _ledTex;
+    private static readonly System.Collections.Generic.List<(HDAdditionalLightData light, float u)> LedLights = new();
+
+    /// <summary>
+    /// Four bars just outside the picture, each a quad whose texture is a row of rainbow dots, rotated so the strip
+    /// runs clockwise around the poster; all share one unlit material whose texture offset scrolls (AnimateLeds).
+    /// Two point lights per bar (its start corner and its middle) take the colour of the dot there.
+    /// </summary>
+    private static void Leds(Transform parent)
+    {
+        LedLights.Clear();
+        _ledTex ??= LedTexture();
+        var shader = Shader.Find("HDRP/Unlit");
+        if (shader == null) throw new Exception("no HDRP/Unlit shader");
+        _ledMat = new Material(shader);
+        _ledMat.SetTexture("_UnlitColorMap", _ledTex);
+        _ledMat.SetColor("_UnlitColor", new Color(3f, 3f, 3f, 1f)); // HDR: brighter than the lit walls around it
+        float half = Size / 2f + 0.05f, len = Size + 0.14f, thick = 0.045f;
+        // top (left to right), right (top to bottom), bottom (right to left), left (bottom to top)
+        var sides = new[] { (new Vector2(0, half), 0f), (new Vector2(half, 0), -90f), (new Vector2(0, -half), 180f), (new Vector2(-half, 0), 90f) };
+        foreach (var (pos, angle) in sides)
+        {
+            var bar = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            var col = bar.GetComponent<Collider>();
+            if (col != null) UnityEngine.Object.Destroy(col);
+            bar.name = "LabyHelper LED";
+            bar.transform.SetParent(parent, false);
+            bar.transform.localPosition = new Vector3(pos.x, pos.y, -0.02f);
+            // A quad seen from its -Z side (as the poster is) has +X on the viewer's left: flip so u runs clockwise.
+            bar.transform.localRotation = Quaternion.Euler(0f, 0f, angle) * Quaternion.Euler(0f, 0f, 180f);
+            bar.transform.localScale = new Vector3(len, thick, 1f);
+            var r = bar.GetComponent<MeshRenderer>();
+            r.sharedMaterial = _ledMat;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            foreach (float u in new[] { 0.04f, 0.5f })
+            {
+                var lgo = new GameObject("LabyHelper LED light");
+                lgo.transform.SetParent(parent, false);
+                // Along the bar in the poster's plane, a little out from the wall so it lights the wall around.
+                var along = bar.transform.localRotation * new Vector3((u - 0.5f) * len, 0f, 0f);
+                lgo.transform.localPosition = new Vector3(pos.x, pos.y, -0.25f) + along;
+                var hd = lgo.AddHDLight(HDLightTypeAndShape.Point);
+                hd.SetIntensity(LedLumen, LightUnit.Lumen);
+                hd.SetRange(LedRange);
+                var light = lgo.GetComponent<Light>();
+                if (light != null) light.shadows = LightShadows.None;
+                LedLights.Add((hd, u));
+            }
+        }
+        Core.Log.Msg($"Poster: LED strip with {LedLights.Count} lights.");
+    }
+
+    /// <summary>One side's dots: lit dot, dark gap, hue going once around the colour wheel.</summary>
+    private static Texture2D LedTexture()
+    {
+        var t = new Texture2D(LedDots * 2, 1, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat, hideFlags = HideFlags.HideAndDontSave,
+        };
+        for (int i = 0; i < LedDots * 2; i++)
+            t.SetPixel(i, 0, i % 2 == 0 ? Color.HSVToRGB((i + 0.5f) / (LedDots * 2f), 1f, 1f) : new Color(0.02f, 0.02f, 0.02f, 1f));
+        t.Apply(false, false);
+        return t;
+    }
+
+    /// <summary>Every frame while the poster exists: scroll the rainbow and recolour the lights to match.</summary>
+    private static void AnimateLeds()
+    {
+        if (_go == null || _ledMat == null) return;
+        try
+        {
+            float offset = Time.time / LedLoop % 1f;
+            _ledMat.SetTextureOffset("_UnlitColorMap", new Vector2(-offset, 0f)); // colours flow clockwise
+            foreach (var (light, u) in LedLights)
+                if (light != null) light.SetColor(Color.HSVToRGB(((u - offset) % 1f + 1f) % 1f, 1f, 1f));
+        }
+        catch (Exception e)
+        {
+            Core.Log.Warning($"Poster: LED animation: {e.Message}");
+            _ledMat = null;
+        }
     }
 
     /// <summary>The wall is there behind the poster's four corners at this centre height.</summary>

@@ -5,6 +5,12 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Información (no cambia la jugabilidad)
+- Cuando todos agarraron el cosmético del caso aparece arriba un cartel enorme y dorado que brilla ("TODOS AGARRARON
+  EL COSMETICO"), una vez por caso. Cuenta a los que tienen el mod; los que no, salen nombrados abajo.
+- Póster junto al cosmético: el marco es una tira LED RGB. Los puntos de colores recorren el borde en arcoíris y 8
+  luces chicas del mismo color iluminan la pared y el póster alrededor, así se ve sin linterna.
+
 ## [0.3.21] - 2026-10-31
 
 ### Jugabilidad
