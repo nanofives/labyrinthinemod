@@ -34,7 +34,12 @@ internal static partial class Minimap
     private static Texture2D _arrow;
 
     /// <summary>64x64 arrowhead pointing up: yellow fill, black outline, notched tail so the direction is obvious.</summary>
-    private static Texture2D MakeArrow()
+    private static Texture2D MakeArrow() => MakeArrow(new Color32(255, 220, 40, 255));
+
+    /// <summary>The arrow with a white fill, tinted per player through GUI.color (the black outline stays black).</summary>
+    private static Texture2D _arrowWhite;
+
+    private static Texture2D MakeArrow(Color32 fill)
     {
         const int n = 64;
         var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
@@ -47,7 +52,7 @@ internal static partial class Minimap
             {
                 var p = new Vector2(x + 0.5f, y + 0.5f);
                 float d = SignedDistance(p, poly);
-                px[y * n + x] = d < -3f ? new Color32(255, 220, 40, 255) : d < 0.5f ? new Color32(0, 0, 0, 255) : new Color32(0, 0, 0, 0);
+                px[y * n + x] = d < -3f ? fill : d < 0.5f ? new Color32(0, 0, 0, 255) : new Color32(0, 0, 0, 0);
             }
         tex.SetPixels32(px);
         tex.Apply(false);
@@ -439,7 +444,7 @@ internal static partial class Minimap
             GUI.color = Color.white;
         }
         foreach (var c in Objectives.Pending)
-            Dot(ToScreen(ToGrid(c.Pos)), 10f, On(Objectives.Colour, c.Pos.y), Objectives.Glyph(c.Kind));
+            Dot(ToScreen(ToGrid(c.Pos)), 22f, On(Objectives.Colour, c.Pos.y), Objectives.Glyph(c.Kind), 40f); // big: easy to spot
         foreach (var (_, pos, chasing) in Monsters)
             MonsterIcon(ToScreen(ToGrid(pos)), chasing ? 26f * (1f + 0.12f * Mathf.Sin(Time.unscaledTime * 10f)) : 20f,
                 On(chasing ? MonsterChaseColour : MonsterColour, pos.y));
@@ -449,8 +454,21 @@ internal static partial class Minimap
         {
             var at = ToScreen(ToGrid(p.Pos));
             var col = On(p.Dead ? new Color(1f, 0.45f, 0.4f) : Players.ColourOf(p.Name), p.Pos.y);
-            if (!p.Dead) ViewCone(at, ScreenAngle(p.Pos, p.Look), cone, col);
-            Dot(at, 15f, col, "●");
+            if (!p.Dead)
+            {
+                // An arrow in their colour pointing where they look, like yours (downed players stay a red dot).
+                float look = ScreenAngle(p.Pos, p.Look);
+                ViewCone(at, look, cone, col);
+                _arrowWhite ??= MakeArrow(new Color32(255, 255, 255, 255));
+                float a = Mathf.Clamp(size * 0.1f, 20f, 40f);
+                var saved = GUI.matrix;
+                GUIUtility.RotateAroundPivot(look, at);
+                GUI.color = col;
+                GUI.DrawTexture(new Rect(at.x - a / 2, at.y - a / 2, a, a), _arrowWhite, ScaleMode.StretchToFill, true);
+                GUI.color = Color.white;
+                GUI.matrix = saved;
+            }
+            else Dot(at, 15f, col, "●");
             _nameStyle ??= new GUIStyle(GUI.skin.label) { fontSize = 13, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
             string label = p.Dead ? $"{p.Name} {Loc.T("(caído)", "(down)")}" : p.Name;
             var nr = new Rect(at.x + 10, at.y - 10, 160, 20);
@@ -694,10 +712,11 @@ internal static partial class Minimap
         }
     }
 
-    private static void Dot(Vector2 at, float size, Color color, string glyph)
+    private static void Dot(Vector2 at, float size, Color color, string glyph, float maxFont = 26f)
     {
-        _style.fontSize = Mathf.RoundToInt(Mathf.Clamp(size * 1.6f, 10f, 26f));
-        var rect = new Rect(at.x - 15, at.y - 15, 30, 30);
+        _style.fontSize = Mathf.RoundToInt(Mathf.Clamp(size * 1.6f, 10f, maxFont));
+        float box = Mathf.Max(30f, _style.fontSize * 1.4f);
+        var rect = new Rect(at.x - box / 2, at.y - box / 2, box, box);
         GUI.color = Color.black;
         GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width, rect.height), Ui.Caps(glyph), _style);
         GUI.color = color;

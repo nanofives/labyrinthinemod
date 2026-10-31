@@ -5,6 +5,11 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Información (no cambia la jugabilidad)
+- Minimapa: los puntos violetas de los objetivos son más del doble de grandes.
+- Minimapa: los otros jugadores son una flecha de su color que apunta hacia donde miran, como la tuya (caídos siguen
+  siendo un punto rojo).
+
 ## [0.3.22] - 2026-10-31
 
 ### Información (no cambia la jugabilidad)
