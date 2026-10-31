@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.21] - 2026-10-31
+
 ### Jugabilidad
 - Al levantarte después de que un monstruo te tire (solo, con ayuda o al reaparecer) vuelven la linterna a la mano
   derecha y el glowstick a la izquierda, así sigue prendida la linterna y siguen los glowsticks automáticos. El
