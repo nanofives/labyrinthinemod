@@ -11,7 +11,8 @@ namespace LabyHelper.Features;
 /// (MazeGenerator.mazeMap, every tile that isn't a wall), recomputed from where you stand four times a second, drawn on
 /// both maps, and marked in the world: a big 3D arrow at the next corner pointing the way to turn, plus labels with
 /// the distances to that corner and to the destination, through walls.
-/// Main floor only (the grid is the maze's floor). Reaching the destination clears it.
+/// The grid is the maze's main floor: steps across closed doors are found with physics and routed around, and the
+/// game's NavMesh path says where the real way changes floor (stairs label). Reaching the destination clears it.
 /// </summary>
 internal static partial class Minimap
 {
@@ -45,6 +46,10 @@ internal static partial class Minimap
         SetBig(false);
         _target = null;
         Route.Clear();
+        Edges.Clear();
+        Blocked.Clear();
+        BlockedOnRoute.Clear();
+        _levelAt = null;
         _arrowGo = null; // destroyed with the scene
     }
 
@@ -68,7 +73,140 @@ internal static partial class Minimap
             Toast.Show(Loc.T("Llegaste al destino", "You reached the destination"), 3f);
             return;
         }
-        Bfs(start.Value, _target.Value, Route);
+        RouteAvoidingDoors(start.Value, _target.Value);
+        if (Time.unscaledTime >= _nextLevels) { _nextLevels = Time.unscaledTime + 1f; FindLevelChange(cam.transform.position); }
+    }
+
+    // ---- closed doors ----
+
+    // Edge between two neighbouring cells -> (blocked, when it was probed). Probed again after DoorRecheck seconds, so
+    // a door that opens frees the way.
+    private static readonly Dictionary<(Vector2Int, Vector2Int), (bool blocked, float at)> Edges = new();
+    private static readonly HashSet<(Vector2Int, Vector2Int)> Blocked = new();
+    private static readonly List<Vector2Int> BlockedOnRoute = new(); // doors the route still crosses (no way around)
+    private const float DoorRecheck = 2f, ProbeHeight = 1.2f, ProbeRadius = 0.25f;
+
+    /// <summary>
+    /// Shortest grid route that doesn't cross a closed door or gate. The grid has no doors, so each step of the
+    /// candidate route is probed with a sphere cast at chest height; a door-like collider (IsDoor) blocks that step and
+    /// the search runs again without it, up to 40 times. With no way around, the route goes through and the doors on
+    /// it are labelled "puerta cerrada".
+    /// </summary>
+    private static void RouteAvoidingDoors(Vector2Int from, Vector2Int to)
+    {
+        BlockedOnRoute.Clear();
+        foreach (var k in Edges.Where(e => Time.unscaledTime - e.Value.at > DoorRecheck).Select(e => e.Key).ToList())
+        {
+            Edges.Remove(k);
+            Blocked.Remove(k);
+        }
+        var path = new List<Vector2Int>();
+        for (int tries = 0; tries < 40; tries++)
+        {
+            path.Clear();
+            Bfs(from, to, path);
+            if (path.Count < 2) break;
+            bool clear = true;
+            for (int i = 1; i < path.Count; i++)
+                if (EdgeBlocked(path[i - 1], path[i])) { clear = false; break; }
+            if (clear) { Route.AddRange(path); return; }
+        }
+        // No door-free way: the plain route, with its closed doors marked.
+        var saved = new List<(Vector2Int, Vector2Int)>(Blocked);
+        Blocked.Clear();
+        path.Clear();
+        Bfs(from, to, path);
+        foreach (var k in saved) Blocked.Add(k);
+        Route.AddRange(path);
+        for (int i = 1; i < path.Count; i++)
+            if (Blocked.Contains(Key(path[i - 1], path[i]))) BlockedOnRoute.Add(path[i]);
+    }
+
+    private static (Vector2Int, Vector2Int) Key(Vector2Int a, Vector2Int b)
+        => a.x < b.x || (a.x == b.x && a.y <= b.y) ? (a, b) : (b, a);
+
+    private static bool EdgeBlocked(Vector2Int a, Vector2Int b)
+    {
+        var k = Key(a, b);
+        if (Edges.TryGetValue(k, out var e)) return e.blocked;
+        bool blocked = false;
+        try
+        {
+            var pa = GridToWorld(a, _origin.y + ProbeHeight);
+            var pb = GridToWorld(b, _origin.y + ProbeHeight);
+            var d = pb - pa;
+            foreach (var hit in Physics.SphereCastAll(pa, ProbeRadius, d.normalized, d.magnitude, ~0, QueryTriggerInteraction.Ignore))
+                if (IsDoor(hit.collider)) { blocked = true; break; }
+        }
+        catch { /* physics not ready */ }
+        Edges[k] = (blocked, Time.unscaledTime);
+        if (blocked) Blocked.Add(k);
+        return blocked;
+    }
+
+    /// <summary>
+    /// A closed door or gate: the game's Door with isOpen false, or a collider under an object whose name says
+    /// door/gate (Gate, CryptGate, MazeGate, MausoleumDoor, the Egyptian and valve gates...). An open door has swung
+    /// its collider out of the corridor, so it isn't hit.
+    /// </summary>
+    private static bool IsDoor(Collider c)
+    {
+        if (c == null) return false;
+        var door = c.GetComponentInParent<Il2Cpp.Door>();
+        if (door != null) return !door.isOpen;
+        for (var t = c.transform; t != null; t = t.parent)
+        {
+            string n = t.name ?? "";
+            if (n.IndexOf("door", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("gate", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("puerta", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+        }
+        return false;
+    }
+
+    // ---- other floors ----
+
+    private static float _nextLevels;
+    private static Vector3? _levelAt; // where the real walking path changes floor
+    private static int _levelDir;     // -1 down, +1 up
+    private static float _levelDist;  // metres walked until there
+
+    /// <summary>
+    /// The grid route stays on the maze's main plane, but the real way can go down to a basement or up to another
+    /// floor. The game's NavMesh covers every floor, so its path from you to the destination shows where the height
+    /// changes by more than 2 m: that spot gets a "bajá / subí las escaleras" label.
+    /// </summary>
+    private static void FindLevelChange(Vector3 eye)
+    {
+        _levelAt = null;
+        if (_target == null) return;
+        try
+        {
+            var feet = eye - new Vector3(0f, 1.6f, 0f);
+            var goal = GridToWorld(_target.Value, _origin.y);
+            if (!UnityEngine.AI.NavMesh.SamplePosition(feet, out var a, 3f, UnityEngine.AI.NavMesh.AllAreas)) return;
+            if (!UnityEngine.AI.NavMesh.SamplePosition(goal, out var b, 4f, UnityEngine.AI.NavMesh.AllAreas)) return;
+            var path = new UnityEngine.AI.NavMeshPath();
+            if (!UnityEngine.AI.NavMesh.CalculatePath(a.position, b.position, UnityEngine.AI.NavMesh.AllAreas, path)) return;
+            var corners = path.corners;
+            if (corners == null || corners.Length < 2) return;
+            float walked = 0f, baseY = corners[0].y;
+            for (int i = 1; i < corners.Length; i++)
+            {
+                float seg = Vector3.Distance(corners[i - 1], corners[i]);
+                walked += seg;
+                float dy = corners[i].y - baseY;
+                if (Mathf.Abs(dy) < 2f) continue;
+                _levelAt = corners[i - 1]; // the last corner still at your height: where the stairs start
+                _levelDir = dy < 0 ? -1 : 1;
+                _levelDist = walked - seg;
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            Core.Log.Warning($"Route: floors: {e.Message}");
+            _nextLevels = Time.unscaledTime + 10f;
+        }
     }
 
     /// <summary>The closest walkable cell to <paramref name="c"/> (clamped into the grid), within 4 cells.</summary>
@@ -167,6 +305,7 @@ internal static partial class Minimap
             foreach (var c in Route) pts.Add(toScreen(c));
             DrawLine(pts, RouteColour, Mathf.Clamp(scale * 0.45f, 3f, 8f));
         }
+        foreach (var d in BlockedOnRoute) Dot(toScreen(d), Mathf.Max(12f, scale), new Color(1f, 0.45f, 0.35f), "X"); // closed doors
         float pulse = 1f + 0.15f * Mathf.Sin(Time.unscaledTime * 5f);
         Dot(toScreen(_target.Value), Mathf.Max(12f, scale) * pulse, RouteColour, "◎");
     }
@@ -206,7 +345,18 @@ internal static partial class Minimap
         float total = (Route.Count - 1) * cell;
         if (turn < Route.Count - 1)
             Label(cam, GridToWorld(Route[turn], y), Loc.T($"Doblá acá\n{turn * cell:0} m", $"Turn here\n{turn * cell:0} m"), Color.white, turn * cell);
-        Label(cam, GridToWorld(Route[^1], y + 1f), Loc.T($"Destino\n{total:0} m", $"Destination\n{total:0} m"), RouteColour, total);
+        string floors = _levelAt == null ? "" : _levelDir < 0
+            ? Loc.T("\n(otro nivel, abajo)", "\n(another floor, below)") : Loc.T("\n(otro nivel, arriba)", "\n(another floor, above)");
+        Label(cam, GridToWorld(Route[^1], y + 1f), Loc.T($"Destino\n{total:0} m", $"Destination\n{total:0} m") + floors, RouteColour, total);
+        foreach (var d in BlockedOnRoute)
+        {
+            float m = Mathf.Max(0, Route.IndexOf(d)) * cell;
+            Label(cam, GridToWorld(d, y + 0.5f), Loc.T($"Puerta cerrada\n{m:0} m", $"Closed door\n{m:0} m"), new Color(1f, 0.45f, 0.35f), m);
+        }
+        if (_levelAt != null)
+            Label(cam, _levelAt.Value + Vector3.up * 1.4f,
+                  (_levelDir < 0 ? Loc.T("Bajá las escaleras", "Go down the stairs") : Loc.T("Subí las escaleras", "Go up the stairs")) + $"\n{_levelDist:0} m",
+                  new Color(1f, 0.85f, 0.3f), _levelDist);
     }
 
     // ---- 3D turn arrow ----

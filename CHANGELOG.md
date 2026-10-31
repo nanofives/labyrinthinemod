@@ -5,6 +5,12 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Información (no cambia la jugabilidad)
+- Ruta del mapa grande (M): ya no pasa por puertas o rejas cerradas. Busca otro camino, y si no hay, marca la puerta
+  con una X roja en el mapa y "PUERTA CERRADA" con la distancia en el mundo. Cuando la puerta se abre, la ruta la usa.
+- Ruta: si el camino real baja a un sótano o sube a otro piso (según el NavMesh del juego), aparece "BAJA LAS ESCALERAS"
+  o "SUBI LAS ESCALERAS" donde empiezan, con la distancia, y el destino dice "otro nivel".
+
 ## [0.3.23] - 2026-10-31
 
 ### Información (no cambia la jugabilidad)
