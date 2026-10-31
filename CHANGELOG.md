@@ -5,6 +5,13 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Grupo
+- Desincronización con jugadores fuera del lobby de Steam (crossplay, o Steam les cortó la conexión): el host no los
+  veía, dejaba las reglas prendidas, y el mod de ellos se creía host y elegía su propio cosmético (y podía generar
+  otro laberinto). Ahora el host cuenta a los jugadores de la partida: si hay más que en el lobby de Steam (por más
+  de 8 segundos), apaga las reglas para todos y avisa quién está afuera. Y un jugador fuera del lobby del host ya no
+  se cree host ni cambia nada de la generación.
+
 ### Jugabilidad
 - Tablero: cada carpeta conserva su cosmético mientras siga sirviendo (a alguien le falta y el tipo de caso lo puede
   dar). Antes, cada vez que salía una carpeta nueva o alguien agarraba un cosmético se volvían a repartir todas, y

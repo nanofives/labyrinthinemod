@@ -184,7 +184,18 @@ internal static class Party
         why = null;
         pending = false;
         var lobby = Lobby();
-        if (lobby == null) { value = mine; return true; } // solo / not a Steam lobby
+        if (lobby == null)
+        {
+            // A client of someone else's match outside their Steam lobby (crossplay, or Steam dropped us): we can't see
+            // what the host decided, so nothing that changes generation; the host turns it off for everyone too.
+            if (MirrorClientOnly())
+            {
+                why = Loc.T("no estás en el lobby de Steam del host", "you aren't in the host's Steam lobby");
+                return false;
+            }
+            value = mine; // solo
+            return true;
+        }
         try
         {
             ulong me = SteamUser.GetSteamID().m_SteamID;
@@ -213,6 +224,25 @@ internal static class Party
                 }
                 value = published;
                 return true;
+            }
+
+            // Players in the match who aren't Steam lobby members can't read or publish anything (crossplay, or their
+            // Steam connection dropped): they would generate and pick on their own, so the rules go off for everyone.
+            int outside = PlayersOutsideLobby(present.Count, out string outsideNames);
+            if (outside <= 0) _outsideSince = -1f;
+            else if (_outsideSince < 0f) _outsideSince = Time.unscaledTime;
+            // A player who quits leaves the Steam lobby a moment before their player object goes: wait a few seconds.
+            if (outside > 0 && Time.unscaledTime - _outsideSince < OutsideGrace)
+            {
+                pending = true;
+                why = Loc.T($"revisando a {outsideNames}", $"checking {outsideNames}");
+                return false;
+            }
+            if (outside > 0)
+            {
+                why = Loc.T($"{outsideNames} no está en el lobby de Steam (crossplay)", $"{outsideNames} isn't in the Steam lobby (crossplay)");
+                SteamMatchmaking.SetLobbyMemberData(lobby.Value, key, $"{mine};on=0;why={Clean(why)}");
+                return false;
             }
 
             foreach (var id in present)
@@ -252,6 +282,9 @@ internal static class Party
             return false;
         }
     }
+
+    private const float OutsideGrace = 8f;
+    private static float _outsideSince = -1f;
 
     private static string Clean(string s) => (s ?? "?").Replace(";", ",").Replace("=", "-");
 
@@ -378,13 +411,43 @@ internal static class Party
     private const string PicksKey = "lh_picks";
     private static string _lastPicks;
 
-    /// <summary>True when we decide for the lobby: we own it, or there's no Steam lobby (solo).</summary>
+    /// <summary>
+    /// How many players are in the match beyond the Steam lobby's members (counted, since nameplate names don't always
+    /// match Steam names), with the names that aren't lobby members for the message.
+    /// </summary>
+    private static int PlayersOutsideLobby(int lobbyMembers, out string names)
+    {
+        names = null;
+        try
+        {
+            var others = Players.Others();
+            int outside = others.Count - (lobbyMembers - 1);
+            if (outside <= 0) return 0;
+            var lobbyNames = Members.Where(m => !m.Remembered).Select(m => m.Name?.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var list = others.Select(o => o.Name).Where(n => !lobbyNames.Contains(n?.Trim())).ToList();
+            names = list.Count > 0 ? string.Join(", ", list) : Loc.T("alguien", "someone");
+            return outside;
+        }
+        catch { return 0; }
+    }
+
+    /// <summary>We're connected to someone else's match (Mirror client, not the server).</summary>
+    public static bool MirrorClientOnly()
+    {
+        try { return Il2CppMirror.NetworkClient.active && !Il2CppMirror.NetworkServer.active; }
+        catch { return false; }
+    }
+
+    /// <summary>
+    /// True when we decide for the lobby: we own it, or there's no Steam lobby and we aren't someone else's client
+    /// (solo). A client outside the host's Steam lobby used to count as host and pick its own cosmetics.
+    /// </summary>
     public static bool IAmHost()
     {
         try
         {
             var lobby = Lobby();
-            if (lobby == null) return true;
+            if (lobby == null) return !MirrorClientOnly();
             return SteamMatchmaking.GetLobbyOwner(lobby.Value).m_SteamID == SteamUser.GetSteamID().m_SteamID;
         }
         catch { return true; }
