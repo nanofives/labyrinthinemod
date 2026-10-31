@@ -154,7 +154,7 @@ internal static class CollectionViewer
 
         Styles();
         var area = OptionsMenu.PanelRect(); // same place and size as F1
-        Ui.Panel(area);
+        Ui.Panel(area, Ui.BigPanelAlpha);
         const float pad = 44f;
         float x = area.x + pad, y = area.y + 30, w = area.width - 2 * pad;
 

@@ -95,6 +95,9 @@ internal static class Ui
     // ---- surfaces ----
 
     /// <summary>The game's rough-edged black panel, semi-transparent.</summary>
+    /// <summary>Opacity of the big F1 / F2 panels (Cas asked for them 10 points more opaque than the 0.74 default).</summary>
+    public const float BigPanelAlpha = 0.84f;
+
     public static void Panel(Rect r, float alpha = 0.74f)
     {
         var bg = UiSkin.PanelBg;

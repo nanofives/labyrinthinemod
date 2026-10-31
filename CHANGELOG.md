@@ -5,6 +5,22 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Jugabilidad
+- Al levantarte después de que un monstruo te tire (solo, con ayuda o al reaparecer) vuelven la linterna a la mano
+  derecha y el glowstick a la izquierda, así sigue prendida la linterna y siguen los glowsticks automáticos. El
+  juego vaciaba las dos manos al caer y no las devolvía.
+- F1 > Jugadores (host): el mod guarda los cosméticos de cada jugador que alguna vez estuvo en un lobby con vos (con
+  el mod), aunque después se vaya. Para cada uno elegís AUTO (cuenta si está en el lobby, como hasta ahora), LE FALTA
+  (los casos dan lo que le falta aunque no esté), LO TIENE (solo sale algo que ya tiene) o NO CUENTA. Así podés
+  apuntar a cosméticos de ciertas personas, o a los que unos tienen y otros no. "Tiene que faltarle" elige si basta
+  con que le falte a alguno o tiene que faltarle a todos. Muestra cuántos cosméticos cumplen, un botón para volver
+  todos a AUTO y una X para olvidar a alguien. Se guarda en `UserData\LabyHelper.players.json`.
+
+### Interfaz
+- Con F1, F2 o el mapa grande (M) abiertos se usa la flecha de Windows en vez del cursor del juego, cuya punta
+  no coincidía con donde cae el clic: marcar un destino en el mapa grande ahora es preciso.
+- El fondo de F1 y F2 es 10 puntos más opaco (84%).
+
 ## [0.3.20] - 2026-10-30
 
 ### Actualizaciones

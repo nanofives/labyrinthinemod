@@ -21,18 +21,30 @@ internal static class AutoGlowstick
     private static Vector3 _lastDrop = new(float.NaN, 0, 0);
     private static bool _equipped;
     private static float _equipAt;
+    private static float _keepUntil; // after getting up: equip again if the hand is emptied this soon
+
+    /// <summary>After getting back up (Revived): the game emptied both hands when you went down.</summary>
+    public static void Rearm()
+    {
+        _equipped = false;
+        _equipAt = Time.unscaledTime + 1f;
+        _keepUntil = Time.unscaledTime + 5f;
+        _next = Time.unscaledTime + 2f;
+    }
 
     public static void OnSceneLoaded()
     {
         _next = Time.unscaledTime + 5f;
         _equipped = false;
         _equipAt = Time.unscaledTime + 3f;
+        _keepUntil = 0f;
         _lastDrop = new Vector3(float.NaN, 0, 0);
     }
 
     public static void Update()
     {
         if (!Settings.AutoGlowstick.Value || !GameState.InCase) return;
+        if (_equipped && Time.unscaledTime < _keepUntil && Time.unscaledTime >= _equipAt && LeftHandEmpty()) _equipped = false;
         if (!_equipped && Time.unscaledTime >= _equipAt) EquipGlowstick();
         if (Time.unscaledTime < _next) return;
         _next = Time.unscaledTime + Mathf.Max(1f, Settings.AutoGlowstickSeconds.Value);
@@ -53,6 +65,16 @@ internal static class AutoGlowstick
             Core.Log.Warning($"AutoGlowstick: {e.Message}");
             _next = Time.unscaledTime + 30f;
         }
+    }
+
+    private static bool LeftHandEmpty()
+    {
+        try
+        {
+            var anim = Il2Cpp.InventoryController.Instance?.anim;
+            return anim != null && anim.LeftArmState != Il2Cpp.AnimationState.GlowStick;
+        }
+        catch { return false; }
     }
 
     /// <summary>Once per case: glowstick in the left hand (retried every second until the inventory is ready).</summary>

@@ -47,6 +47,7 @@ public class Core : MelonMod
         Safe("CosmeticAlert.Update", () => CosmeticAlert.Update());
         Safe("Pigman.Update", () => Pigman.Update());
         Safe("MonsterAlert.Update", () => MonsterAlert.Update());
+        Safe("Revived.Update", () => Revived.Update());
         Safe("AutoGlowstick.Update", () => AutoGlowstick.Update());
         Safe("AutoFlashlight.Update", () => AutoFlashlight.Update());
         Safe("Objectives.Update", () => Objectives.Update());
@@ -61,6 +62,7 @@ public class Core : MelonMod
         Safe("ModelIcons.Update", () => ModelIcons.Update());
         Safe("CollectionViewer.Update", () => CollectionViewer.Update());
         Safe("OptionsMenu.Update", () => OptionsMenu.Update());
+        Safe("WinCursor.Update", () => WinCursor.Update());
         Safe("InfiniteLives.Update", () => InfiniteLives.Update());
         Safe("Poster.Update", () => Poster.Update());
         Safe("UpdateInfo.Update", () => UpdateInfo.Update());
@@ -83,6 +85,7 @@ public class Core : MelonMod
         Safe("CosmeticAlert.OnSceneLoaded", () => CosmeticAlert.OnSceneLoaded());
         Safe("Pigman.OnSceneLoaded", () => Pigman.OnSceneLoaded());
         Safe("MonsterAlert.OnSceneLoaded", () => MonsterAlert.OnSceneLoaded());
+        Safe("Revived.OnSceneLoaded", () => Revived.OnSceneLoaded());
         Safe("AutoGlowstick.OnSceneLoaded", () => AutoGlowstick.OnSceneLoaded());
         Safe("AutoFlashlight.OnSceneLoaded", () => AutoFlashlight.OnSceneLoaded());
         Safe("Objectives.OnSceneLoaded", () => Objectives.OnSceneLoaded());

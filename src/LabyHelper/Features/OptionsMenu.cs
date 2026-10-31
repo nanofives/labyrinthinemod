@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using MelonLoader;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace LabyHelper.Features;
 /// </summary>
 internal static class OptionsMenu
 {
-    private enum Page { General, Difficulty, Variety, Cosmetics, Alerts, Board, Picture, Gameplay, Experimental }
+    private enum Page { General, Difficulty, Players, Variety, Cosmetics, Alerts, Board, Picture, Gameplay, Experimental }
 
     private const float RowH = 58f;
     private static Page _page = Page.General;
@@ -119,6 +120,7 @@ internal static class OptionsMenu
         {
             (Page.General, "General", "General"),
             (Page.Difficulty, "Dificultad", "Difficulty"),
+            (Page.Players, "Jugadores", "Players"),
             (Page.Variety, "Mapa", "Map"),
             (Page.Cosmetics, "Cosméticos", "Cosmetics"),
             (Page.Alerts, "Avisos", "Alerts"),
@@ -155,7 +157,7 @@ internal static class OptionsMenu
 
         var area = PanelRect();
         Styles();
-        Ui.Panel(area);
+        Ui.Panel(area, Ui.BigPanelAlpha);
         float pad = 44f;
         float x = area.x + pad, y = area.y + 30, w = area.width - 2 * pad;
 
@@ -189,6 +191,7 @@ internal static class OptionsMenu
         {
             case Page.General: General(ref cy, cw); break;
             case Page.Difficulty: Difficulty(ref cy, cw); break;
+            case Page.Players: Players(ref cy, cw); break;
             case Page.Variety: Variety(ref cy, cw); break;
             case Page.Cosmetics: Cosmetics(ref cy, cw); break;
             case Page.Alerts: Alerts(ref cy, cw); break;
@@ -309,6 +312,99 @@ internal static class OptionsMenu
         Toggle(ref cy, cw, Loc.T("Más mapas egipcios si todos tienen el DLC", "More Egypt maps if everyone owns the DLC"), Settings.MoreDlcMaps);
         Section(ref cy, cw, Loc.T("Grupo", "Party"));
         Toggle(ref cy, cw, Loc.T("Sincronizar con los jugadores (necesitan el mod)", "Sync with other players (they need the mod)"), Settings.PartySync);
+    }
+
+    private static readonly KnownPlayers.Mode[] Modes =
+        { KnownPlayers.Mode.Auto, KnownPlayers.Mode.Missing, KnownPlayers.Mode.Owns, KnownPlayers.Mode.Ignore };
+
+    private static string ModeLabel(KnownPlayers.Mode m) => m switch
+    {
+        KnownPlayers.Mode.Missing => Loc.T("Le falta", "Missing it"),
+        KnownPlayers.Mode.Owns => Loc.T("Lo tiene", "Owns it"),
+        KnownPlayers.Mode.Ignore => Loc.T("No cuenta", "Ignored"),
+        _ => Loc.T("Auto", "Auto"),
+    };
+
+    private static int _neededCountVersion = -1, _neededCount;
+
+    /// <summary>
+    /// Everyone ever seen in a lobby with their last known cosmetics (KnownPlayers): the host picks who the random
+    /// cases are for, present or not, and who must already own the item.
+    /// </summary>
+    private static void Players(ref float cy, float cw)
+    {
+        Section(ref cy, cw, Loc.T("Para quién salen los cosméticos (host)", "Who the cosmetics are for (host)"));
+        Ui.Text(new Rect(14, cy, cw - 14, RowH * 1.6f), Loc.T(
+            "AUTO: cuenta si está en el lobby. LE FALTA: sale lo que le falta, aunque no esté. LO TIENE: solo sale algo que ya tiene. NO CUENTA: se ignora aunque esté.",
+            "AUTO: counts while in the lobby. MISSING IT: drops what they lack, even if absent. OWNS IT: only items they already own. IGNORED: never counts."),
+            _small, Ui.Dim);
+        cy += RowH * 1.6f;
+
+        // Any / all of the "le falta" group.
+        var row = new Rect(0, cy, cw, RowH);
+        Ui.RowHover(row, "players:all");
+        Ui.Text(new Rect(14, cy, CtrlX(cw) - 24, RowH), Loc.T("Tiene que faltarle", "Must be missing for"), _row, Ui.Paper);
+        float sx = CtrlX(cw);
+        if (Ui.Arrows(new Rect(sx - 8, cy + 4, Mathf.Min(360f, cw - sx - 8), RowH - 8),
+                      KnownPlayers.MissingAll ? Loc.T("A todos", "Everyone") : Loc.T("A alguno", "Anyone"), "players:all") != 0)
+            KnownPlayers.MissingAll = !KnownPlayers.MissingAll;
+        cy += RowH;
+
+        if (_neededCountVersion != Party.Version) { _neededCountVersion = Party.Version; _neededCount = Party.Needed().Count; }
+        string summary = Party.SelectionEmpty()
+            ? Loc.T("Nadie para recibir: se usa el lobby como siempre.", "Nobody to aim at: the lobby is used as always.")
+            : Loc.T($"Cumplen {_neededCount} cosméticos.", $"{_neededCount} cosmetics match.");
+        Ui.Text(new Rect(14, cy, cw - 300, RowH), summary, _small, Party.SelectionEmpty() ? new Color(1f, 0.88f, 0.55f) : Ui.Paper);
+        if (KnownPlayers.Custom && Ui.Button(new Rect(cw - 280, cy + 4, 270, RowH - 8), Loc.T("Todos en auto", "All on auto")))
+            KnownPlayers.ResetModes();
+        cy += RowH;
+
+        Section(ref cy, cw, Loc.T("Jugadores guardados", "Remembered players"));
+        ulong me = 0;
+        try { me = Il2CppSteamworks.SteamUser.GetSteamID().m_SteamID; } catch { /* Steam not ready */ }
+        var list = KnownPlayers.All
+            .OrderByDescending(p => p.Id == me).ThenByDescending(p => Party.InLobby(p.Id)).ThenByDescending(p => p.LastSeen)
+            .ToList();
+        if (list.Count == 0)
+        {
+            Ui.Text(new Rect(14, cy, cw - 14, RowH), Loc.T("Todavía nadie: se guardan al compartir un lobby con el mod.",
+                "Nobody yet: players are saved when you share a lobby with the mod."), _small, Ui.Dim);
+            cy += RowH;
+            return;
+        }
+        KnownPlayers.Entry forget = null;
+        foreach (var p in list)
+        {
+            string key = "player:" + p.Id;
+            bool here = Party.InLobby(p.Id);
+            row = new Rect(0, cy, cw, RowH);
+            Ui.RowHover(row, key);
+            string name = (p.Name ?? p.Id.ToString()) + (p.Id == me ? Loc.T(" (vos)", " (you)") : "");
+            float nameW = CtrlX(cw) - 24;
+            Ui.Text(new Rect(14, cy, nameW * 0.55f, RowH), name, _row, here ? Ui.Paper : Ui.Dim);
+            int owned = p.OwnedSet()?.Count ?? 0;
+            string seen = here ? Loc.T("en el lobby", "in the lobby") : Seen(p.LastSeen);
+            Ui.Text(new Rect(14 + nameW * 0.55f, cy, nameW * 0.45f, RowH), Loc.T($"{owned} cosm. · {seen}", $"{owned} cosm. · {seen}"),
+                    _small, here ? new Color(0.5f, 1f, 0.55f) : Ui.Dim);
+            float aw = Mathf.Min(360f, cw - sx - 8 - (here || p.Id == me ? 0 : 70));
+            int step = Ui.Arrows(new Rect(sx - 8, cy + 4, aw, RowH - 8), ModeLabel(p.Mode), key);
+            if (step != 0)
+            {
+                int i = Array.IndexOf(Modes, p.Mode);
+                KnownPlayers.SetMode(p.Id, Modes[((i + step) % Modes.Length + Modes.Length) % Modes.Length]);
+            }
+            if (!here && p.Id != me && Ui.Button(new Rect(sx - 8 + aw + 10, cy + 4, 56, RowH - 8), "X")) forget = p;
+            cy += RowH;
+        }
+        if (forget != null) KnownPlayers.Forget(forget.Id);
+    }
+
+    private static string Seen(long unix)
+    {
+        var days = (DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeSeconds(unix)).TotalDays;
+        if (days < 1) return Loc.T("hoy", "today");
+        if (days < 2) return Loc.T("ayer", "yesterday");
+        return Loc.T($"hace {(int)days} días", $"{(int)days} days ago");
     }
 
     private static void Variety(ref float cy, float cw)

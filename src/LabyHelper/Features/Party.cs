@@ -62,15 +62,70 @@ internal static class Party
         }
     }
 
-    /// <summary>Items that at least one player with data doesn't own yet (just you when solo).</summary>
+    /// <summary>
+    /// Items the random cases aim at. By default: what at least one player in the lobby with data doesn't own yet
+    /// (just you when solo). F1 > Jugadores (KnownPlayers) changes who counts: remembered players marked "le falta"
+    /// count even when absent, "lo tiene" players must already own the item, "no cuenta" ones are skipped, and the
+    /// item may have to be missing for all of the group instead of any.
+    /// </summary>
     public static HashSet<ushort> Needed()
     {
         var all = Catalog.AllIds().Where(id => !BrokenItems.IsBroken(id)).ToHashSet(); // never hand out items without a model
         var withData = Members.Where(m => m.HasData).ToList();
-        if (withData.Count == 0)
+        if (withData.Count == 0 && !KnownPlayers.Custom)
             return all.Where(id => CosmeticAlert.IsUnlocked(id) == false).ToHashSet();
-        return all.Where(id => withData.Any(m => !m.Owned.Contains(id))).ToHashSet();
+
+        var (missing, owns) = Groups(withData);
+        if (missing.Count == 0) // nobody left in the "needs it" group: the lobby as always
+            return all.Where(id => withData.Any(m => !m.Owned.Contains(id))).ToHashSet();
+        return all.Where(id => (KnownPlayers.MissingAll ? missing.All(s => !s.Contains(id)) : missing.Any(s => !s.Contains(id)))
+                               && owns.All(s => s.Contains(id))).ToHashSet();
     }
+
+    /// <summary>True when the player selection leaves nobody to aim at, so Needed falls back to the lobby.</summary>
+    public static bool SelectionEmpty() => Groups(Members.Where(m => m.HasData).ToList()).missing.Count == 0;
+
+    /// <summary>
+    /// Owned sets of the "needs it" group (lobby members on Auto or Missing, plus absent remembered players on
+    /// Missing) and of the "must own it" group (Owns, present or not).
+    /// </summary>
+    private static (List<HashSet<ushort>> missing, List<HashSet<ushort>> owns) Groups(List<Member> withData)
+    {
+        var missing = new List<HashSet<ushort>>();
+        var owns = new List<HashSet<ushort>>();
+        var present = new HashSet<ulong>();
+        foreach (var m in withData)
+        {
+            present.Add(m.SteamId);
+            switch (KnownPlayers.ModeOf(m.SteamId))
+            {
+                case KnownPlayers.Mode.Auto:
+                case KnownPlayers.Mode.Missing: missing.Add(m.Owned); break;
+                case KnownPlayers.Mode.Owns: owns.Add(m.Owned); break;
+            }
+        }
+        foreach (var p in KnownPlayers.All)
+        {
+            if (present.Contains(p.Id)) continue;
+            var set = p.OwnedSet();
+            if (set == null) continue;
+            if (p.Mode == KnownPlayers.Mode.Missing) missing.Add(set);
+            else if (p.Mode == KnownPlayers.Mode.Owns) owns.Add(set);
+        }
+        return (missing, owns);
+    }
+
+    /// <summary>F1 > Jugadores changed a mode: recompute the board, picks and post-its.</summary>
+    public static void SelectionChanged()
+    {
+        _version++;
+        Distribution.Invalidate();
+        CaseBoard.RefreshAll();
+        Core.Log.Msg($"Party: player selection changed -> {Needed().Count} needed.");
+    }
+
+    /// <summary>Whether this member is currently in the lobby (Members has them with data).</summary>
+    public static bool InLobby(ulong id) => Members.Any(m => m.SteamId == id);
 
     private static CSteamID? Lobby()
     {
@@ -204,7 +259,11 @@ internal static class Party
         var lobby = Lobby();
         if (lobby == null)
         {
-            members.Add(new Member(me, Loc.T("Vos", "You"), true, PoolBoost.OwnedIds().ToHashSet()));
+            var mine = PoolBoost.OwnedIds().ToHashSet();
+            members.Add(new Member(me, Loc.T("Vos", "You"), true, mine));
+            string myName = null;
+            try { myName = SteamFriends.GetPersonaName(); } catch { /* Steam not ready */ }
+            KnownPlayers.Remember(me, myName, mine);
         }
         else
         {
@@ -220,6 +279,7 @@ internal static class Party
                         ? PoolBoost.OwnedIds().ToHashSet()
                         : Decode(SteamMatchmaking.GetLobbyMemberData(lobby.Value, id, Key));
                     members.Add(new Member(id.m_SteamID, name, isMe, owned));
+                    KnownPlayers.Remember(id.m_SteamID, name, owned);
                     if (!isMe) ReadPicked(id, SteamMatchmaking.GetLobbyMemberData(lobby.Value, id, PickedKey));
                 }
             }
@@ -403,7 +463,7 @@ internal static class Party
                (!p.First.HasData || p.First.Owned.SetEquals(p.Second.Owned)));
 
     // Bitset by item ID, base64. 600 items -> ~100 chars, far under Steam's 8 KB member data limit.
-    private static string Encode(IEnumerable<ushort> ids)
+    public static string Encode(IEnumerable<ushort> ids)
     {
         var list = ids.ToList();
         if (list.Count == 0) return "1:";
@@ -412,7 +472,7 @@ internal static class Party
         return "1:" + Convert.ToBase64String(bytes);
     }
 
-    private static HashSet<ushort> Decode(string value)
+    public static HashSet<ushort> Decode(string value)
     {
         if (string.IsNullOrEmpty(value) || !value.StartsWith("1:")) return null;
         var set = new HashSet<ushort>();
