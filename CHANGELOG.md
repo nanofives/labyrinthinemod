@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.25] - 2026-10-31
+
 ### Grupo
 - Jugadores que están en la partida pero no en el lobby de Steam (entraron por crossplay o Steam les cortó la
   conexión y volvieron por otro lado): el mod no puede leer lo que comparten, así que usa la última lista de
