@@ -117,7 +117,7 @@ internal static class CosmeticAlert
             foreach (var m in Party.Members)
             {
                 if (m.IsMe) { (PickedUp.Contains(id) ? have : missing).Add(Loc.T("vos", "you")); continue; }
-                if (!m.HasData) unknown.Add(m.Name); // no mod: we can't know
+                if (!m.Live) unknown.Add(m.Name); // no mod, or outside the Steam lobby: we can't know
                 else (PickedThisCase(m, seed, id) ? have : missing).Add(m.Name);
             }
             var parts = new List<string>();
@@ -146,7 +146,7 @@ internal static class CosmeticAlert
             foreach (var m in Party.Members)
             {
                 if (m.IsMe) { if (ids.Any(id => !PickedUp.Contains(id))) missing.Add(m); continue; }
-                if (m.HasData && ids.Any(id => !PickedThisCase(m, seed, id))) missing.Add(m);
+                if (m.Live && ids.Any(id => !PickedThisCase(m, seed, id))) missing.Add(m);
             }
         }
         return _missing = missing;

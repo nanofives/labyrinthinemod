@@ -215,7 +215,8 @@ internal static class CaseBoard
         foreach (var m in members)
         {
             bool has = m.Owned.Contains(id);
-            lines.Add((has ? Loc.T($"✔ {m.Name} lo tiene", $"✔ {m.Name} has it") : Loc.T($"✘ {m.Name} no lo tiene", $"✘ {m.Name} doesn't have it"),
+            string saved = m.Remembered ? Loc.T(" (guardado)", " (saved)") : "";
+            lines.Add((has ? Loc.T($"✔ {m.Name} lo tiene{saved}", $"✔ {m.Name} has it{saved}") : Loc.T($"✘ {m.Name} no lo tiene{saved}", $"✘ {m.Name} doesn't have it{saved}"),
                        has ? new Color(0.5f, 1f, 0.55f) : new Color(1f, 0.45f, 0.4f), Ui.Label));
         }
         foreach (var m in Party.Members.Where(m => !m.HasData))

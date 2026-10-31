@@ -28,12 +28,14 @@ internal static class AllPickedBanner
         if (_shown || !GameState.InCase || Time.unscaledTime < _next) return;
         _next = Time.unscaledTime + 0.5f;
         if (!CosmeticAlert.CaseHasCosmetic()) return;
+        // Nobody else whose pickups we hear about (alone, or the rest outside the Steam lobby): "everyone" would be a guess.
+        if (!Party.Members.Any(m => !m.IsMe && m.Live)) return;
         int missing = CosmeticAlert.StillToPickUp().Count;
         if (missing > 0) { _sawMissing = true; return; }
         if (!_sawMissing) return; // nothing seen missing yet (cosmetic just spawned, party data not in)
         _shown = true;
         _since = Time.unscaledTime;
-        var unknown = Party.Members.Where(m => !m.IsMe && !m.HasData).Select(m => m.Name).ToList();
+        var unknown = Party.Members.Where(m => !m.IsMe && !m.Live).Select(m => m.Name).ToList();
         _footer = unknown.Count > 0 ? Loc.T("Sin datos (sin el mod): ", "Unknown (no mod): ") + string.Join(", ", unknown) : null;
         Core.Log.Msg("AllPickedBanner: everyone picked up the cosmetic.");
     }

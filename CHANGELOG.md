@@ -5,6 +5,13 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Grupo
+- Jugadores que están en la partida pero no en el lobby de Steam (entraron por crossplay o Steam les cortó la
+  conexión y volvieron por otro lado): el mod no puede leer lo que comparten, así que usa la última lista de
+  cosméticos que tiene guardada de ellos. Salen como "(guardado)" en las carpetas del tablero y cuentan para elegir
+  los cosméticos. Lo que agarran en el caso no se puede saber: salen como "sin datos" y el cartel de "todos
+  agarraron" solo aparece si hay alguien más con datos en vivo. El log anota quién quedó afuera del lobby.
+
 ## [0.3.24] - 2026-10-31
 
 ### Información (no cambia la jugabilidad)

@@ -30,9 +30,40 @@ internal static class Party
     private static readonly Dictionary<ulong, float> FirstSeen = new();
     private static ulong _publishedLobby;
 
-    public record Member(ulong SteamId, string Name, bool IsMe, HashSet<ushort> Owned)
+    /// <summary>
+    /// <paramref name="Remembered"/>: in the game but not in the Steam lobby (joined through crossplay / EOS, or Steam
+    /// dropped them), so <paramref name="Owned"/> is their last saved list (KnownPlayers) and what they pick up in this
+    /// case is unknown.
+    /// </summary>
+    public record Member(ulong SteamId, string Name, bool IsMe, HashSet<ushort> Owned, bool Remembered = false)
     {
         public bool HasData => Owned != null;
+        /// <summary>We hear about their pickups (they're in the Steam lobby with the mod).</summary>
+        public bool Live => HasData && !Remembered;
+    }
+
+    private static readonly HashSet<string> ReportedOutside = new();
+
+    /// <summary>
+    /// Players in the match (PlayerNetworkSync nameplates) who aren't Steam lobby members: everything the mod shares goes
+    /// through Steam lobby member data, which they can't read or write. Matched by name with KnownPlayers.
+    /// </summary>
+    private static void AddOutsideLobby(List<Member> members)
+    {
+        List<Players.Other> inGame;
+        try { inGame = Players.Others(); }
+        catch { return; }
+        foreach (var o in inGame)
+        {
+            string name = o.Name?.Trim();
+            if (string.IsNullOrEmpty(name) || members.Any(m => string.Equals(m.Name?.Trim(), name, StringComparison.OrdinalIgnoreCase))) continue;
+            var known = KnownPlayers.All.FirstOrDefault(k => string.Equals(k.Name?.Trim(), name, StringComparison.OrdinalIgnoreCase));
+            var owned = known?.OwnedSet();
+            members.Add(new Member(known?.Id ?? 0, name, false, owned, Remembered: true));
+            if (ReportedOutside.Add(name))
+                Core.Log.Msg($"Party: {name} is in the match but not in the Steam lobby (crossplay?) -> " +
+                             (owned != null ? $"using their saved list ({owned.Count} owned)." : "no saved list, no data."));
+        }
     }
 
     public static List<Member> Members { get; private set; } = new();
@@ -286,12 +317,14 @@ internal static class Party
             catch (Exception e) { Core.Log.Warning($"Party: read failed: {e.Message}"); }
         }
 
+        AddOutsideLobby(members); // also with no Steam lobby at all (crossplay-only match)
+
         if (!SameAs(members))
         {
             Members = members;
             _version++;
             Core.Log.Msg("Party: " + string.Join(", ", members.Select(m =>
-                $"{m.Name} {(m.HasData ? m.Owned.Count + " owned" : "no data")}")) + $" -> {Needed().Count} needed.");
+                $"{m.Name} {(m.HasData ? m.Owned.Count + (m.Remembered ? " owned (saved)" : " owned") : "no data")}")) + $" -> {Needed().Count} needed.");
             Distribution.Invalidate();
             CaseBoard.RefreshAll();
         }
@@ -459,7 +492,8 @@ internal static class Party
 
     private static bool SameAs(List<Member> other)
         => other.Count == Members.Count && other.Zip(Members).All(p =>
-               p.First.SteamId == p.Second.SteamId && p.First.HasData == p.Second.HasData &&
+               p.First.SteamId == p.Second.SteamId && p.First.Name == p.Second.Name && p.First.HasData == p.Second.HasData &&
+               p.First.Remembered == p.Second.Remembered &&
                (!p.First.HasData || p.First.Owned.SetEquals(p.Second.Owned)));
 
     // Bitset by item ID, base64. 600 items -> ~100 chars, far under Steam's 8 KB member data limit.
