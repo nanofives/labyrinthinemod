@@ -55,6 +55,7 @@ public class Core : MelonMod
         Safe("Minimap.Update", () => Minimap.Update());
         Safe("SelfRevive.Update", () => SelfRevive.Update());
         Safe("Party.Update", () => Party.Update());
+        Safe("Distribution.Update", () => Distribution.Update());
         Safe("Rules.Refresh", () => Rules.Refresh());
         Safe("CaseBoard.Update", () => CaseBoard.Update());
 #if EXPERIMENTS

@@ -317,7 +317,8 @@ internal static class Party
             catch (Exception e) { Core.Log.Warning($"Party: read failed: {e.Message}"); }
         }
 
-        AddOutsideLobby(members); // also with no Steam lobby at all (crossplay-only match)
+        WatchHostPicks();
+                AddOutsideLobby(members); // also with no Steam lobby at all (crossplay-only match)
 
         if (!SameAs(members))
         {
@@ -414,6 +415,24 @@ internal static class Party
     /// Clients: the host's pick for this case seed. <paramref name="hostDecides"/> is false when the host publishes no
     /// picks (older version / no mod): then the caller decides locally as before.
     /// </summary>
+    private static string _lastHostPicks;
+
+    /// <summary>Clients: redraw the post-its when the host's published picks change (Read cycle).</summary>
+    private static void WatchHostPicks()
+    {
+        if (IAmHost()) return;
+        try
+        {
+            var lobby = Lobby();
+            if (lobby == null) return;
+            string value = SteamMatchmaking.GetLobbyMemberData(lobby.Value, SteamMatchmaking.GetLobbyOwner(lobby.Value), PicksKey);
+            if (value == _lastHostPicks) return;
+            _lastHostPicks = value;
+            CaseBoard.RefreshAll();
+        }
+        catch { /* Steam not ready */ }
+    }
+
     public static ushort? HostPick(int seed, out bool hostDecides)
     {
         hostDecides = false;

@@ -5,6 +5,13 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Jugabilidad
+- Tablero: cada carpeta conserva su cosmético mientras siga sirviendo (a alguien le falta y el tipo de caso lo puede
+  dar). Antes, cada vez que salía una carpeta nueva o alguien agarraba un cosmético se volvían a repartir todas, y
+  una carpeta podía dar otra cosa que lo que mostraba su post-it, porque solo se redibujaba la carpeta nueva. Ahora,
+  si el cosmético de alguna carpeta cambia, se redibujan todos los post-its (también en los demás jugadores cuando el
+  host cambia lo que publica).
+
 ## [0.3.25] - 2026-10-31
 
 ### Grupo

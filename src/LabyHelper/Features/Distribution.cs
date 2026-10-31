@@ -27,6 +27,16 @@ internal static class Distribution
 
     public static void Invalidate() => _inputsKey = null;
 
+    private static bool _refreshBoard;
+
+    /// <summary>Called every frame (Core): redraws the post-its after the targets changed, outside Refresh itself.</summary>
+    public static void Update()
+    {
+        if (!_refreshBoard) return;
+        _refreshBoard = false;
+        CaseBoard.RefreshAll();
+    }
+
     /// <summary>Contracts on the lobby board that are random case files (not custom cases).</summary>
     public static List<Contract> BoardContracts()
     {
@@ -155,13 +165,25 @@ internal static class Distribution
         var needed = Party.Needed();
         var cands = board.ToDictionary(c => c.Seed, Candidates);
         var load = board.ToDictionary(c => c.Seed, _ => new HashSet<ushort>());
+        var hcItems = Obtainable(true);
+        var normalItems = Obtainable(false);
+
+        // Keep what each folder already showed while it can still drop it (still needed, right kind of case), so a new
+        // folder or someone picking an item up doesn't reshuffle the others: the post-it you looked at stays true.
+        var previous = new Dictionary<int, ushort>(Targets);
+        var pinned = new Dictionary<int, ushort>();
+        foreach (var c in board)
+        {
+            if (!previous.TryGetValue(c.Seed, out var t) || !needed.Contains(t) || pinned.ContainsValue(t)) continue;
+            if (!(c.ContractType == ContractType.Hardcore ? hcItems : normalItems).Contains(t)) continue;
+            pinned[c.Seed] = t;
+            load[c.Seed].Add(t);
+        }
 
         // Prefer the cases whose own map pool has the item (keeps map exclusives on their map); otherwise any case
         // of the same kind can take it, since RandomCaseRule swaps the itemID of a pickup that loads its model.
-        var hcItems = Obtainable(true);
-        var normalItems = Obtainable(false);
         // Store / limited / level-reward items aren't in any case pool: never assign them.
-        var items = needed.Where(id => hcItems.Contains(id) || normalItems.Contains(id))
+        var items = needed.Where(id => (hcItems.Contains(id) || normalItems.Contains(id)) && !pinned.ContainsValue(id))
             .Select(id =>
             {
                 var native = board.Where(c => cands[c.Seed].Contains(id)).Select(c => c.Seed).ToList();
@@ -182,9 +204,13 @@ internal static class Distribution
         Targets.Clear();
         foreach (var c in board)
         {
+            if (pinned.TryGetValue(c.Seed, out var keep)) { Targets[c.Seed] = keep; continue; }
             var allowed = AllowedFrom(c, needed, load[c.Seed]);
             if (allowed.Count > 0) Targets[c.Seed] = RandomCaseRule.PickTarget(c, allowed);
         }
+        // Any folder whose item changed gets its post-it redrawn (the board hook only decorates the folder that changed).
+        if (Targets.Count != previous.Count || Targets.Any(t => !previous.TryGetValue(t.Key, out var old) || old != t.Value))
+            _refreshBoard = true;
         int droppable = needed.Count(id => hcItems.Contains(id) || normalItems.Contains(id));
         Core.Log.Msg("Distribution: " + string.Join(", ", board.Select(c => $"{c.MazeType}/{c.ContractType}={load[c.Seed].Count}")) +
                      $" of {droppable} droppable ({needed.Count} needed, the rest only from store/rewards).");
