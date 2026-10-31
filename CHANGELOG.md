@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.27] - 2026-10-31
+
 ### Grupo
 - Jugadores que se caen del lobby de Steam sin irse de la partida (pasó con todos por Steam, algunos en Invisible):
   su mod lo nota y vuelve a entrar solo al lobby del host, así vuelven a compartir sus cosméticos, lo que agarran y
