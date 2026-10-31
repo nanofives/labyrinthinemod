@@ -5,6 +5,8 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+## [0.3.22] - 2026-10-31
+
 ### Información (no cambia la jugabilidad)
 - Cuando todos agarraron el cosmético del caso aparece arriba un cartel enorme y dorado que brilla ("TODOS AGARRARON
   EL COSMETICO"), una vez por caso. Cuenta a los que tienen el mod; los que no, salen nombrados abajo.
