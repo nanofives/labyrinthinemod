@@ -5,6 +5,13 @@ sección a la versión nueva.
 
 ## [Sin publicar]
 
+### Grupo
+- Jugadores que se caen del lobby de Steam sin irse de la partida (pasó con todos por Steam, algunos en Invisible):
+  su mod lo nota y vuelve a entrar solo al lobby del host, así vuelven a compartir sus cosméticos, lo que agarran y
+  lo que elige el host. El log anota cada cambio en la cantidad de miembros del lobby para entender por qué pasa.
+- El host espera 30 segundos (antes 8) antes de apagar las reglas por alguien fuera del lobby de Steam, para darle
+  tiempo a volver a entrar.
+
 ## [0.3.26] - 2026-10-31
 
 ### Grupo

@@ -283,7 +283,7 @@ internal static class Party
         }
     }
 
-    private const float OutsideGrace = 8f;
+    private const float OutsideGrace = 30f; // room for a dropped client to rejoin (WatchMembership)
     private static float _outsideSince = -1f;
 
     private static string Clean(string s) => (s ?? "?").Replace(";", ",").Replace("=", "-");
@@ -350,6 +350,7 @@ internal static class Party
             catch (Exception e) { Core.Log.Warning($"Party: read failed: {e.Message}"); }
         }
 
+        WatchMembership();
         WatchHostPicks();
                 AddOutsideLobby(members); // also with no Steam lobby at all (crossplay-only match)
 
@@ -362,6 +363,41 @@ internal static class Party
             Distribution.Invalidate();
             CaseBoard.RefreshAll();
         }
+    }
+
+    private static float _nextRejoin;
+    private static string _lastLobbyState;
+
+    /// <summary>
+    /// Players sometimes drop out of the host's Steam lobby while staying in the match (seen with everyone on Steam,
+    /// some set to Invisible; cause unknown). Everything the mod shares lives in that lobby, so a client that notices it
+    /// is no longer a member rejoins the same lobby (ExtendedSteamTransport.LobbyID). The game's own lobby-enter
+    /// callback checks NetworkManager.isNetworkActive first, so it doesn't reconnect. Also logs every change in the
+    /// lobby / member count / match player count for diagnosis.
+    /// </summary>
+    private static void WatchMembership()
+    {
+        try
+        {
+            var lobby = Lobby();
+            int n = lobby == null ? -1 : SteamMatchmaking.GetNumLobbyMembers(lobby.Value);
+            int inMatch = Players.Others().Count + 1;
+            string state = $"lobby {(lobby?.m_SteamID ?? 0)}, {n} member(s), {inMatch} in the match, {(MirrorClientOnly() ? "client" : "host/solo")}";
+            if (state != _lastLobbyState)
+            {
+                _lastLobbyState = state;
+                Core.Log.Msg($"Party: {state}.");
+            }
+            if (lobby == null || !MirrorClientOnly() || Time.unscaledTime < _nextRejoin) return;
+            ulong me = SteamUser.GetSteamID().m_SteamID;
+            for (int i = 0; i < n; i++)
+                if (SteamMatchmaking.GetLobbyMemberByIndex(lobby.Value, i).m_SteamID == me) return; // still a member
+            _nextRejoin = Time.unscaledTime + 15f;
+            Core.Log.Msg($"Party: not a member of the host's Steam lobby {lobby.Value.m_SteamID} any more, rejoining it.");
+            SteamMatchmaking.JoinLobby(lobby.Value);
+            _publishedLobby = 0; // publish everything again once back in
+        }
+        catch (Exception e) { Core.Log.Warning($"Party: membership check failed: {e.Message}"); }
     }
 
     private static void ReadPicked(CSteamID id, string value)
